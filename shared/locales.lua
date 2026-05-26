@@ -1,0 +1,39 @@
+Locales = Locales or {}
+
+Locales.en = {
+    startup_loaded = 'w2f-garage foundation loaded.',
+    startup_framework = 'Selected framework: %s',
+    no_framework = 'No supported framework detected. Running in safe fallback mode.',
+    no_vehicles = 'No vehicles are available in this garage.',
+    garage_disabled = 'This garage is currently disabled.',
+    access_denied = 'You do not have access to this garage.',
+    invalid_garage = 'Invalid garage.',
+    invalid_plate = 'Invalid vehicle plate.',
+    invalid_player = 'Unable to validate player.',
+    vehicle_out = 'This vehicle is already out.',
+    vehicle_impounded = 'This vehicle is impounded.',
+    vehicle_stored = 'Vehicle stored.',
+    vehicle_spawn_pending = 'Vehicle spawn request received.',
+    not_implemented = 'This feature is reserved for a later build stage.',
+    database_safe_mode = 'Database safe mode is active. No production data will be modified.',
+    admin_denied = 'You do not have permission to use this admin command.',
+    nui_title = 'Garage Control',
+    nui_subtitle = 'Vehicle management dashboard',
+    nui_spawn = 'Spawn vehicle',
+    nui_store = 'Store vehicle',
+    nui_recover = 'Recover vehicle',
+    nui_pay_impound = 'Pay impound',
+    nui_transfer = 'Transfer',
+    nui_favourite = 'Favourite',
+    nui_search_placeholder = 'Search by plate, model, or garage...',
+    status_stored = 'Stored',
+    status_out = 'Out',
+    status_impounded = 'Impounded',
+    status_destroyed = 'Destroyed',
+    status_seized = 'Seized',
+    status_repair = 'In repair',
+    status_transferred = 'Transferred',
+    status_unknown = 'Unknown'
+}
+
+Locale = Locales.en
