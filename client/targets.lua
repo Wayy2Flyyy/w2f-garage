@@ -112,6 +112,63 @@ function Targets.AddStoreTargets(garage)
     return true
 end
 
+function Targets.InitProperty()
+    if not targetReady() or not Config.Property or not Config.Property.Enabled then
+        return false
+    end
+
+    for garageId, garage in pairs(PropertyGarages.GetAll()) do
+        local coords = garage.exteriorEntryCoords
+
+        if coords and not PropertyGarages.IsTodoCoords(coords) then
+            local zoneName = ('w2f_property_entry_%s'):format(garageId)
+
+            exports.ox_target:addSphereZone({
+                name = zoneName,
+                coords = coords,
+                radius = Config.Target.InteractionDistance or 2.5,
+                debug = Config.Debug,
+                options = {
+                    {
+                        name = zoneName .. '_manage',
+                        icon = 'fa-solid fa-building',
+                        label = garage.label,
+                        onSelect = function()
+                            ClientProperty.OpenDashboard(garageId)
+                        end
+                    },
+                    {
+                        name = zoneName .. '_enter',
+                        icon = 'fa-solid fa-door-open',
+                        label = 'Enter Garage',
+                        canInteract = function()
+                            return garage.enterEnabled ~= false
+                        end,
+                        onSelect = function()
+                            ClientProperty.Enter(garageId, 1)
+                        end
+                    },
+                    {
+                        name = zoneName .. '_store',
+                        icon = 'fa-solid fa-square-parking',
+                        label = 'Store Vehicle',
+                        canInteract = function()
+                            return garage.storeEnabled ~= false
+                        end,
+                        onSelect = function()
+                            ClientProperty.StoreAtGarage(garageId)
+                        end
+                    }
+                }
+            })
+
+            Targets.Zones[#Targets.Zones + 1] = zoneName
+        end
+    end
+
+    return true
+end
+
 function Targets.Init()
     if not targetReady() then
         ClientUtils.Debug('ox_target is unavailable; target interactions skipped.')

@@ -1,45 +1,37 @@
-# Events and Callbacks
+# Events & Callbacks
 
-All event and callback names use the `w2f-garage:` prefix.
+Prefix: `w2f-garage:`
 
 ## Client events
 
-- `w2f-garage:client:openGarage`
-- `w2f-garage:client:closeGarage`
-- `w2f-garage:client:spawnVehicle`
-- `w2f-garage:client:storeVehicle`
-- `w2f-garage:client:refreshGarage`
+| Event | Description |
+|-------|-------------|
+| `w2f-garage:client:openGarage` | Open public garage NUI |
+| `w2f-garage:client:closeGarage` | Close NUI |
+| `w2f-garage:client:enterGarage` | Reserved |
+| `w2f-garage:client:exitGarage` | Reserved |
+| `w2f-garage:client:spawnVehicle` | Spawn approved vehicle (server payload) |
+| `w2f-garage:client:storeVehicle` | Store cleanup client hook |
+| `w2f-garage:client:propertyEnter` | Enter property interior session |
+| `w2f-garage:client:propertyExit` | Exit property interior session |
+| `w2f-garage:client:interiorLoadVehicles` | Spawn display vehicles in interior |
+| `w2f-garage:client:interiorUnloadVehicles` | Remove display vehicles |
+| `w2f-garage:client:openPropertyGarage` | Open property dashboard |
 
-## Server events
+## Server callbacks (ox_lib)
 
-- `w2f-garage:server:requestVehicles`
-- `w2f-garage:server:storeVehicle`
-- `w2f-garage:server:recoverVehicle`
-- `w2f-garage:server:payImpound`
-
-## Server callbacks
-
-- `w2f-garage:server:getGarageData`
-- `w2f-garage:server:getVehicles`
-- `w2f-garage:server:getOwnedVehicles`
-- `w2f-garage:server:spawnVehicle`
-- `w2f-garage:server:storeVehicle`
-- `w2f-garage:server:recoverVehicle`
-- `w2f-garage:server:payImpound`
-- `w2f-garage:server:adminSearchVehicle`
-
-## Trust boundary
-
-The client and NUI can request actions. The server validates:
-
-- player identity
-- vehicle ownership
-- garage access
-- job/gang restrictions
-- payment availability
-- vehicle state
-- impound state
-- duplicate-spawn risk
-- admin permissions
-
-The server response controls whether the action proceeds.
+| Callback | Purpose |
+|----------|---------|
+| `w2f-garage:server:getGarageData` | Public garage metadata |
+| `w2f-garage:server:getVehicles` | Vehicles in public garage |
+| `w2f-garage:server:spawnVehicle` | Spawn (public or property) |
+| `w2f-garage:server:storeVehicle` | Store (public or property) |
+| `w2f-garage:server:getPropertyDashboard` | Owned + purchasable property list |
+| `w2f-garage:server:buyGarage` | Purchase property garage |
+| `w2f-garage:server:sellGarage` | Sell owned garage |
+| `w2f-garage:server:enterGarage` | Enter interior (property) |
+| `w2f-garage:server:exitGarage` | Exit interior |
+| `w2f-garage:server:getGarageVehicles` | Stored vehicles + slot info |
+| `w2f-garage:server:moveVehicleSlot` | Reassign slot index |
+| `w2f-garage:server:propertySpawnVehicle` | Drive out from property interior |
+| `w2f-garage:server:propertyStoreVehicle` | Store at property exterior |

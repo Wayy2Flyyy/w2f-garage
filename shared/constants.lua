@@ -8,10 +8,13 @@ W2F_GARAGE.VehicleStates = {
     IMPOUNDED = 'impounded',
     DESTROYED = 'destroyed',
     SEIZED = 'seized',
-    REPAIR = 'repair',
+    IN_REPAIR = 'in_repair',
     TRANSFERRED = 'transferred',
     UNKNOWN = 'unknown'
 }
+
+-- Legacy alias
+W2F_GARAGE.VehicleStates.REPAIR = W2F_GARAGE.VehicleStates.IN_REPAIR
 
 W2F_GARAGE.GarageTypes = {
     PUBLIC = 'public',
@@ -21,15 +24,31 @@ W2F_GARAGE.GarageTypes = {
     PRIVATE = 'private',
     BUSINESS = 'business',
     EMERGENCY = 'emergency',
-    HIDDEN = 'hidden'
+    HIDDEN = 'hidden',
+    PROPERTY = 'property'
+}
+
+W2F_GARAGE.PropertyClasses = {
+    LOW_END = 'low-end',
+    MEDIUM = 'medium',
+    HIGH_END = 'high-end',
+    HIGH_END_CUSTOM = 'high-end-custom'
 }
 
 W2F_GARAGE.Events = {
     OpenGarage = 'w2f-garage:client:openGarage',
     CloseGarage = 'w2f-garage:client:closeGarage',
+    EnterGarage = 'w2f-garage:client:enterGarage',
+    ExitGarage = 'w2f-garage:client:exitGarage',
     SpawnVehicle = 'w2f-garage:client:spawnVehicle',
     StoreVehicle = 'w2f-garage:client:storeVehicle',
     RefreshGarage = 'w2f-garage:client:refreshGarage',
+    PropertyEnter = 'w2f-garage:client:propertyEnter',
+    PropertyExit = 'w2f-garage:client:propertyExit',
+    InteriorLoadVehicles = 'w2f-garage:client:interiorLoadVehicles',
+    InteriorUnloadVehicles = 'w2f-garage:client:interiorUnloadVehicles',
+    InteriorSpawnDisplay = 'w2f-garage:client:interiorSpawnDisplay',
+    InteriorRemoveDisplay = 'w2f-garage:client:interiorRemoveDisplay',
     RequestVehicles = 'w2f-garage:server:requestVehicles',
     ServerStoreVehicle = 'w2f-garage:server:storeVehicle',
     ServerRecoverVehicle = 'w2f-garage:server:recoverVehicle',
@@ -44,7 +63,18 @@ W2F_GARAGE.Callbacks = {
     StoreVehicle = 'w2f-garage:server:storeVehicle',
     RecoverVehicle = 'w2f-garage:server:recoverVehicle',
     PayImpound = 'w2f-garage:server:payImpound',
-    AdminSearchVehicle = 'w2f-garage:server:adminSearchVehicle'
+    AdminSearchVehicle = 'w2f-garage:server:adminSearchVehicle',
+    GetPropertyGarages = 'w2f-garage:server:getPropertyGarages',
+    GetOwnedGarages = 'w2f-garage:server:getOwnedGarages',
+    BuyGarage = 'w2f-garage:server:buyGarage',
+    SellGarage = 'w2f-garage:server:sellGarage',
+    EnterGarage = 'w2f-garage:server:enterGarage',
+    ExitGarage = 'w2f-garage:server:exitGarage',
+    MoveVehicleSlot = 'w2f-garage:server:moveVehicleSlot',
+    GetGarageVehicles = 'w2f-garage:server:getGarageVehicles',
+    PropertySpawnVehicle = 'w2f-garage:server:propertySpawnVehicle',
+    PropertyStoreVehicle = 'w2f-garage:server:propertyStoreVehicle',
+    GetPropertyDashboard = 'w2f-garage:server:getPropertyDashboard'
 }
 
 W2F_GARAGE.LogActions = {
@@ -58,7 +88,13 @@ W2F_GARAGE.LogActions = {
     ADMIN_ACTION = 'admin_action',
     TRANSFER = 'garage_transfer',
     IMPOUND_PAYMENT = 'impound_payment',
-    SECURITY_WARNING = 'security_warning'
+    SECURITY_WARNING = 'security_warning',
+    GARAGE_PURCHASED = 'garage_purchased',
+    GARAGE_SOLD = 'garage_sold',
+    GARAGE_ENTER = 'garage_enter',
+    GARAGE_EXIT = 'garage_exit',
+    SLOT_ASSIGNED = 'slot_assigned',
+    SLOT_MOVED = 'slot_moved'
 }
 
 W2F_GARAGE.ValidFrameworks = {
@@ -66,4 +102,9 @@ W2F_GARAGE.ValidFrameworks = {
     qbcore = true,
     qbox = true,
     esx = true
+}
+
+W2F_GARAGE.SlotTypes = {
+    VEHICLE = 'vehicle',
+    BICYCLE = 'bicycle'
 }

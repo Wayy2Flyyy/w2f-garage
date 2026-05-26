@@ -10,7 +10,10 @@ local function localeMessage(code)
         invalid_player = Locale.invalid_player,
         vehicle_already_out = Locale.vehicle_out,
         not_implemented = Locale.not_implemented,
-        vehicle_not_found = Locale.no_vehicles
+        vehicle_not_found = Locale.no_vehicles,
+        property_disabled = Locale.property_disabled,
+        coords_not_ready = Locale.coords_not_ready,
+        garage_full = Locale.garage_full
     }
 
     return messages[code] or code or Locale.not_implemented
@@ -95,6 +98,11 @@ function Callbacks.Register()
         data = data or {}
         local plate = ServerUtils.NormalizePlate(data.plate)
         local garageId = data.garageId
+
+        if PropertyGarages.Get(garageId) then
+            return Property.SpawnVehicle(source, garageId, plate, data.floorIndex)
+        end
+
         local valid, reason = Security.ValidateSpawnRequest(source, garageId, plate)
 
         if not valid then
@@ -112,6 +120,11 @@ function Callbacks.Register()
         data = data or {}
         local plate = ServerUtils.NormalizePlate(data.plate)
         local garageId = data.garageId
+
+        if PropertyGarages.Get(garageId) then
+            return Property.StoreVehicle(source, garageId, data)
+        end
+
         local valid, reason = Security.ValidateStoreRequest(source, garageId, plate)
 
         if not valid then
@@ -133,10 +146,14 @@ function Callbacks.Register()
             return ServerUtils.Failure('invalid_plate', Locale.invalid_plate)
         end
 
-        return ServerUtils.Failure('not_implemented', Locale.not_implemented, {
-            approved = false,
-            plate = plate
-        })
+        local admin = Security.ValidateAdmin(source)
+
+        if not admin then
+            return ServerUtils.Failure('permission_denied', Locale.admin_denied)
+        end
+
+        VehicleState.Recover(plate, 'admin_recover', source)
+        return ServerUtils.Success({ plate = plate, recovered = true })
     end)
 
     register(W2F_GARAGE.Callbacks.PayImpound, function(source, data)
@@ -161,9 +178,107 @@ function Callbacks.Register()
             return ServerUtils.Failure(reason, Locale.admin_denied)
         end
 
-        return ServerUtils.Failure('not_implemented', Locale.not_implemented, {
-            query = data and data.query or nil
-        })
+        local query = data and data.query
+        local plate = ServerUtils.NormalizePlate(query)
+
+        if plate then
+            return ServerUtils.Success({
+                plate = plate,
+                state = VehicleState.Get(plate),
+                slot = Database.GetGarageSlot(data.garageId, plate)
+            })
+        end
+
+        return ServerUtils.Failure('invalid_query', Locale.invalid_plate)
+    end)
+
+    register(W2F_GARAGE.Callbacks.GetPropertyGarages, function(source)
+        if not Property.IsEnabled() then
+            return ServerUtils.Failure('property_disabled', Locale.property_disabled)
+        end
+
+        local list = {}
+
+        for id, garage in pairs(PropertyGarages.GetAll()) do
+            list[id] = PropertyGarages.Enrich(id, {
+                owned = Property.PlayerOwnsGarage(Bridge.GetIdentifier(source), id)
+            })
+        end
+
+        return ServerUtils.Success(list)
+    end)
+
+    register(W2F_GARAGE.Callbacks.GetOwnedGarages, function(source)
+        if not Property.IsEnabled() then
+            return ServerUtils.Failure('property_disabled', Locale.property_disabled)
+        end
+
+        return ServerUtils.Success(Database.GetOwnedGarages(Bridge.GetIdentifier(source)) or {})
+    end)
+
+    register(W2F_GARAGE.Callbacks.GetPropertyDashboard, function(source)
+        if not Property.IsEnabled() then
+            return ServerUtils.Failure('property_disabled', Locale.property_disabled)
+        end
+
+        return ServerUtils.Success(Property.GetDashboard(source))
+    end)
+
+    register(W2F_GARAGE.Callbacks.BuyGarage, function(source, garageId)
+        return Property.BuyGarage(source, garageId)
+    end)
+
+    register(W2F_GARAGE.Callbacks.SellGarage, function(source, garageId)
+        if not Property.IsEnabled() or not Config.Property.AllowSell then
+            return ServerUtils.Failure('sell_disabled', Locale.sell_disabled)
+        end
+
+        local identifier = Bridge.GetIdentifier(source)
+
+        if not Property.PlayerOwnsGarage(identifier, garageId) then
+            return ServerUtils.Failure('not_owner', Locale.access_denied)
+        end
+
+        local property = PropertyGarages.Get(garageId)
+        local refund = math.floor((property.price or 0) * (Config.Property.SellRefundPercent or 0.5))
+
+        Database.RemoveOwnedGarage(identifier, garageId)
+
+        if refund > 0 then
+            Bridge.AddMoney(source, Config.Property.PurchaseAccount or 'bank', refund, 'w2f-garage sell')
+        end
+
+        Bridge.Notify(source, Locale.garage_sold:format(property.label), 'success')
+        return ServerUtils.Success({ garageId = garageId, refund = refund })
+    end)
+
+    register(W2F_GARAGE.Callbacks.EnterGarage, function(source, data)
+        data = data or {}
+        return Property.EnterGarage(source, data.garageId, data.floorIndex)
+    end)
+
+    register(W2F_GARAGE.Callbacks.ExitGarage, function(source, garageId)
+        return Property.ExitGarage(source, garageId)
+    end)
+
+    register(W2F_GARAGE.Callbacks.GetGarageVehicles, function(source, data)
+        data = data or {}
+        return Property.GetGarageVehicles(source, data.garageId, data.floorIndex)
+    end)
+
+    register(W2F_GARAGE.Callbacks.MoveVehicleSlot, function(source, data)
+        data = data or {}
+        return Property.MoveVehicleSlot(source, data.garageId, data.plate, data.slotIndex, data.floorIndex)
+    end)
+
+    register(W2F_GARAGE.Callbacks.PropertySpawnVehicle, function(source, data)
+        data = data or {}
+        return Property.SpawnVehicle(source, data.garageId, data.plate, data.floorIndex)
+    end)
+
+    register(W2F_GARAGE.Callbacks.PropertyStoreVehicle, function(source, data)
+        data = data or {}
+        return Property.StoreVehicle(source, data.garageId, data)
     end)
 
     Callbacks.Registered = true

@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState, type CSSProperties } from 'react'
 import { GarageDashboard } from './pages/GarageDashboard'
+import { PropertyGarageDashboard, type PropertyDashboardData } from './pages/PropertyGarageDashboard'
 import { fetchNui, isFiveM, useNuiEvent } from './hooks/useNuiEvent'
 import { mockGarages, mockVehicles, type Garage, type Vehicle } from './data/mockVehicles'
 
@@ -19,8 +20,10 @@ function isGarage(payload: Record<string, Garage> | Garage): payload is Garage {
 
 export default function App() {
   const [visible, setVisible] = useState(!isFiveM())
+  const [mode, setMode] = useState<'garage' | 'property'>(!isFiveM() ? 'property' : 'garage')
   const [garages, setGarages] = useState<Record<string, Garage>>(mockGarages)
   const [vehicles, setVehicles] = useState<Vehicle[]>(isFiveM() ? [] : mockVehicles)
+  const [propertyDashboard, setPropertyDashboard] = useState<PropertyDashboardData>()
   const [selectedGarageId, setSelectedGarageId] = useState<string>('legion_public')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string>()
@@ -33,6 +36,7 @@ export default function App() {
   useNuiEvent<OpenPayload>(
     'openGarage',
     useCallback((payload) => {
+      setMode('garage')
       setVisible(true)
       setError(undefined)
 
@@ -45,6 +49,30 @@ export default function App() {
           ...current,
           [payload.garage!.id]: payload.garage!
         }))
+      }
+
+      if (payload?.config) {
+        setConfig((current) => ({
+          ...current,
+          ...payload.config
+        }))
+      }
+    }, [])
+  )
+
+  useNuiEvent<{ garageId?: string; dashboard?: PropertyDashboardData; config?: OpenPayload['config'] }>(
+    'openPropertyGarage',
+    useCallback((payload) => {
+      setMode('property')
+      setVisible(true)
+      setError(undefined)
+
+      if (payload?.garageId) {
+        setSelectedGarageId(payload.garageId)
+      }
+
+      if (payload?.dashboard) {
+        setPropertyDashboard(payload.dashboard)
       }
 
       if (payload?.config) {
@@ -77,6 +105,13 @@ export default function App() {
 
         setGarages(payload)
       }
+    }, [])
+  )
+
+  useNuiEvent<PropertyDashboardData>(
+    'setPropertyDashboard',
+    useCallback((payload) => {
+      setPropertyDashboard(payload)
     }, [])
   )
 
@@ -148,13 +183,21 @@ export default function App() {
         {loading && <div className="loading-bar">Loading garage data...</div>}
         {error && <div className="error-bar">{error}</div>}
 
-        <GarageDashboard
-          garages={garages}
-          vehicles={vehicles}
-          selectedGarageId={selectedGarageId}
-          onSelectGarage={setSelectedGarageId}
-          onVehiclesChanged={setVehicles}
-        />
+        {mode === 'property' ? (
+          <PropertyGarageDashboard
+            dashboard={propertyDashboard}
+            selectedGarageId={selectedGarageId}
+            onSelectGarage={setSelectedGarageId}
+          />
+        ) : (
+          <GarageDashboard
+            garages={garages}
+            vehicles={vehicles}
+            selectedGarageId={selectedGarageId}
+            onSelectGarage={setSelectedGarageId}
+            onVehiclesChanged={setVehicles}
+          />
+        )}
       </section>
     </div>
   )

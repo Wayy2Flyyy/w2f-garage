@@ -92,6 +92,28 @@ Config.Features = {
     EnableFavourites = true
 }
 
+Config.Property = {
+    Enabled = true,
+    PublicMode = false,
+    AllowMultipleOwned = true,
+    MaxOwnedGarages = 5,
+    AllowSell = true,
+    SellRefundPercent = 0.5,
+    PurchaseAccount = 'bank',
+    RequireProductionCoords = false,
+    UseRoutingBuckets = true,
+    RoutingBucketOffset = 0,
+    AntiDuplication = true,
+    InteriorDisplayVehicles = true,
+    DefaultBlipLabel = 'Property Garage'
+}
+
+Config.Database.W2FTables.ownedGarages = 'w2f_owned_garages'
+Config.Database.W2FTables.garageSlots = 'w2f_garage_slots'
+Config.Database.W2FTables.garageInteriors = 'w2f_garage_interiors'
+Config.Database.W2FTables.garageVehiclePositions = 'w2f_garage_vehicle_positions'
+Config.Database.W2FTables.purchaseLogs = 'w2f_garage_purchase_logs'
+
 Config.DebugCommands = {
     OpenGarage = true,
     PrintState = true

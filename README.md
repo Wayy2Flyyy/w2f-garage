@@ -1,65 +1,44 @@
 # w2f-garage
 
-`w2f-garage` is a framework-bridged FiveM vehicle garage and vehicle management resource. It is designed to become the central vehicle authority for storing, spawning, recovering, impounding, tracking, and managing player vehicles across QBCore, QBX/Qbox, and ESX servers.
+Production-oriented FiveM property garage framework for **QBCore**, **Qbox**, and **ESX**.
 
-This repository currently contains the foundation build. It is intentionally safe by default:
+## Features
 
-- no automatic database migrations
-- no production vehicle data overwrites
-- no destructive migration behavior
-- no client-authoritative vehicle ownership/state decisions
-- no framework-specific calls outside bridge files
+- Framework bridge (no direct `QBCore` / `ESX` calls in garage logic)
+- Dynasty 8 property garages (low / medium / high-end + future Eclipse 50-car)
+- Server-authoritative purchase, store, spawn, slots, and state
+- Interior abstraction with physical display vehicles when coords are configured
+- Slot manager (assign, swap, move floor, move garage, anti-duplicate plates)
+- ox_lib, ox_target, oxmysql, configurable fuel/keys/notify/inventory bridges
+- Premium dark NUI (public garages + property dashboard)
+- Admin recovery commands
+- Additive SQL only (manual install)
 
-## Foundation status
+## Dependencies
 
-Implemented foundation targets:
+- [ox_lib](https://github.com/overextended/ox_lib)
+- [oxmysql](https://github.com/overextended/oxmysql)
+- [ox_target](https://github.com/overextended/ox_target) (recommended)
 
-- resource structure
-- shared configuration
-- garage configuration schema
-- state/event/callback constants
-- locale placeholders
-- manual SQL install script
-- installation, bridge, database, events, exports, and migration documentation
+## Quick start
 
-Planned next foundation targets:
-
-- framework bridge implementations
-- server callback and state-manager placeholders
-- client zones, targets, and NUI open/close flow
-- React/TypeScript/Vite NUI dashboard baseline
-- validation and startup-safety checks
-
-## Supported frameworks
-
-Framework selection is controlled through `Config.Framework`:
-
-- `auto`
-- `qbcore`
-- `qbox`
-- `esx`
-
-The main garage logic must call the normalized bridge API. Framework-specific APIs are isolated to framework bridge modules only.
-
-## Recommended dependencies
-
-- `ox_lib`
-- `oxmysql`
-- `ox_target` for garage interactions
-- `ox_inventory` or framework inventory adapter
-- configurable fuel resource
-- configurable key resource
+1. Import `sql/install.sql` manually (after backup).
+2. Configure `shared/config.lua` (framework, database table mapping, property options).
+3. Add `ensure w2f-garage` after ox_lib, oxmysql, and your framework.
+4. Build UI: `cd web && npm install && npm run build`.
 
 ## Documentation
 
 - [INSTALL.md](INSTALL.md)
-- [Configuration Guide](docs/CONFIG_GUIDE.md)
-- [Framework Bridge](docs/FRAMEWORK_BRIDGE.md)
-- [Database](docs/DATABASE.md)
-- [Events and Callbacks](docs/EVENTS.md)
-- [Exports](docs/EXPORTS.md)
-- [Migration](docs/MIGRATION.md)
+- [docs/CONFIG_GUIDE.md](docs/CONFIG_GUIDE.md)
+- [docs/PROPERTY_GARAGES.md](docs/PROPERTY_GARAGES.md)
+- [docs/INTERIORS.md](docs/INTERIORS.md)
+- [docs/FRAMEWORK_BRIDGE.md](docs/FRAMEWORK_BRIDGE.md)
+- [docs/DATABASE.md](docs/DATABASE.md)
+- [docs/EVENTS.md](docs/EVENTS.md)
+- [docs/EXPORTS.md](docs/EXPORTS.md)
+- [docs/MIGRATION.md](docs/MIGRATION.md)
 
-## Safety warning
+## TODO_COORDS
 
-Do not run this alongside another garage resource that controls the same vehicle storage/spawn state in production. Running multiple authority systems can cause duplicates, broken vehicle states, and ownership issues. Read the migration guide before replacing an existing garage.
+Most property garages ship with exact **entry** coords only. Store, spawn, interior entry/exit, and slot positions use `TODO_COORDS` until mapped. The resource starts safely; full drive-in interiors require completing coordinates per [docs/PROPERTY_GARAGES.md](docs/PROPERTY_GARAGES.md).

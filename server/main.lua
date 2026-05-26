@@ -1,12 +1,14 @@
 local function startup()
-    Bridge.Initialize()
+    Bridge.Init()
     Callbacks.Register()
     Admin.RegisterCommands()
     VehicleState.RestartRecovery()
 
-    Logs.Info('w2f-garage server foundation started.', {
+    Logs.Info('w2f-garage server started.', {
         framework = Bridge.ActiveFramework,
-        garages = ServerUtils.TableCount(Garages.List),
+        publicGarages = ServerUtils.TableCount(Garages.List),
+        propertyGarages = ServerUtils.TableCount(PropertyGarages.GetAll()),
+        propertyEnabled = Config.Property and Config.Property.Enabled,
         databaseEnabled = Config.Database.Enabled,
         databaseSafeMode = Database.IsSafeMode(),
         inventory = Config.Inventory,
@@ -78,4 +80,20 @@ end)
 
 exports('ReleaseVehicle', function(plate)
     return VehicleState.Recover(plate, 'export_release', 0)
+end)
+
+exports('BuyPropertyGarage', function(source, garageId)
+    return Property.BuyGarage(source, garageId)
+end)
+
+exports('PlayerOwnsGarage', function(source, garageId)
+    return Property.PlayerOwnsGarage(Bridge.GetIdentifier(source), garageId)
+end)
+
+exports('GetPropertyDashboard', function(source)
+    return Property.GetDashboard(source)
+end)
+
+exports('EnterPropertyGarage', function(source, garageId, floorIndex)
+    return Property.EnterGarage(source, garageId, floorIndex)
 end)

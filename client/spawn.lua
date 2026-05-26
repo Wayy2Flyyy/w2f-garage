@@ -64,3 +64,41 @@ function Spawn.RequestVehicle(garageId, plate)
 
     return response
 end
+
+RegisterNetEvent(W2F_GARAGE.Events.SpawnVehicle, function(payload)
+    local model = payload.model
+
+    if type(model) == 'string' then
+        model = joaat(model)
+    end
+
+    local coords = payload.coords
+
+    if not coords or not model then
+        ClientUtils.Notify(Locale.coords_not_ready, 'error')
+        return
+    end
+
+    lib.requestModel(model, 10000)
+
+    local vehicle = CreateVehicle(
+        model,
+        coords.x,
+        coords.y,
+        coords.z,
+        coords.w or 0.0,
+        true,
+        false
+    )
+
+    SetVehicleNumberPlateText(vehicle, payload.plate or '')
+    ClientUtils.ApplyVehicleProperties(vehicle, payload)
+
+    if Config.Features.GiveKeysOnSpawn and Keys and Keys.GiveKeys then
+        Keys.GiveKeys(payload.plate, vehicle)
+    end
+
+    TaskWarpPedIntoVehicle(PlayerPedId(), vehicle, -1)
+    SetModelAsNoLongerNeeded(model)
+    ClientUtils.Notify(Locale.vehicle_spawned, 'success')
+end)

@@ -19,6 +19,11 @@ function Security.ValidateGarageAccess(source, garageId)
         return false, playerReason
     end
 
+    if PropertyGarages and PropertyGarages.Get(garageId) then
+        local access, reason = Property.CanAccessGarage(source, garageId)
+        return access, reason
+    end
+
     local garage = ServerUtils.GetGarage(garageId)
 
     if not garage then
