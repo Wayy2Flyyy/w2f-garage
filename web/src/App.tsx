@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState, type CSSProperties } from 'react'
 import { GarageDashboard } from './pages/GarageDashboard'
 import { PropertyGarageDashboard, type PropertyDashboardData } from './pages/PropertyGarageDashboard'
+import { PublicGarageDashboard, type PublicVehicle } from './pages/PublicGarageDashboard'
 import { fetchNui, isFiveM, useNuiEvent } from './hooks/useNuiEvent'
 import { mockGarages, mockVehicles, type Garage, type Vehicle } from './data/mockVehicles'
 
@@ -14,17 +15,64 @@ type OpenPayload = {
   }
 }
 
+type PublicGarageOpenPayload = {
+  garageId?: string
+  garage?: { id?: string; label?: string }
+  data?: {
+    vehicles?: PublicVehicle[]
+    garage?: { label?: string; dailyVehicleFee?: number; sharedPublicStorage?: boolean }
+    totalUnpaidFees?: number
+    dailyVehicleFee?: number
+  }
+  config?: OpenPayload['config']
+}
+
 function isGarage(payload: Record<string, Garage> | Garage): payload is Garage {
   return typeof (payload as Garage).id === 'string'
 }
 
+const mockPublicData = {
+  vehicles: [
+    {
+      plate: 'PUB001',
+      model: 'sultan',
+      storedGarageLabel: 'Legion Square Public Garage',
+      fuel: 72,
+      engineHealth: 890,
+      bodyHealth: 920,
+      storedForHours: 26,
+      storedForDays: 1,
+      dailyFee: 700,
+      unpaidFee: 700,
+      canSpawn: false
+    },
+    {
+      plate: 'PUB002',
+      model: 'buffalo',
+      storedGarageLabel: 'Legion Square Public Garage',
+      fuel: 100,
+      engineHealth: 1000,
+      bodyHealth: 1000,
+      storedForHours: 5,
+      storedForDays: 0,
+      dailyFee: 700,
+      unpaidFee: 0,
+      canSpawn: true
+    }
+  ] as PublicVehicle[],
+  garage: { label: 'Legion Square Public Garage', dailyVehicleFee: 700, sharedPublicStorage: true },
+  totalUnpaidFees: 700,
+  dailyVehicleFee: 700
+}
+
 export default function App() {
   const [visible, setVisible] = useState(!isFiveM())
-  const [mode, setMode] = useState<'garage' | 'property'>(!isFiveM() ? 'property' : 'garage')
+  const [mode, setMode] = useState<'garage' | 'property' | 'public'>(!isFiveM() ? 'public' : 'garage')
   const [garages, setGarages] = useState<Record<string, Garage>>(mockGarages)
   const [vehicles, setVehicles] = useState<Vehicle[]>(isFiveM() ? [] : mockVehicles)
   const [propertyDashboard, setPropertyDashboard] = useState<PropertyDashboardData>()
-  const [selectedGarageId, setSelectedGarageId] = useState<string>('legion_public')
+  const [publicData, setPublicData] = useState<PublicGarageOpenPayload['data']>(mockPublicData)
+  const [selectedGarageId, setSelectedGarageId] = useState<string>('legion_square')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string>()
   const [config, setConfig] = useState({
@@ -49,6 +97,30 @@ export default function App() {
           ...current,
           [payload.garage!.id]: payload.garage!
         }))
+      }
+
+      if (payload?.config) {
+        setConfig((current) => ({
+          ...current,
+          ...payload.config
+        }))
+      }
+    }, [])
+  )
+
+  useNuiEvent<PublicGarageOpenPayload>(
+    'openPublicGarage',
+    useCallback((payload) => {
+      setMode('public')
+      setVisible(true)
+      setError(undefined)
+
+      if (payload?.garageId) {
+        setSelectedGarageId(payload.garageId)
+      }
+
+      if (payload?.data) {
+        setPublicData(payload.data)
       }
 
       if (payload?.config) {
@@ -183,7 +255,13 @@ export default function App() {
         {loading && <div className="loading-bar">Loading garage data...</div>}
         {error && <div className="error-bar">{error}</div>}
 
-        {mode === 'property' ? (
+        {mode === 'public' ? (
+          <PublicGarageDashboard
+            garageId={selectedGarageId}
+            data={publicData}
+            onRefresh={(payload) => setPublicData(payload)}
+          />
+        ) : mode === 'property' ? (
           <PropertyGarageDashboard
             dashboard={propertyDashboard}
             selectedGarageId={selectedGarageId}

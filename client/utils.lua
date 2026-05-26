@@ -23,6 +23,10 @@ function ClientUtils.Notify(message, notifyType, duration)
 end
 
 function ClientUtils.GetGarage(garageId)
+    if BasicPublicGarages and BasicPublicGarages.Get(garageId) then
+        return BasicPublicGarages.Enrich(garageId)
+    end
+
     if PropertyGarages and PropertyGarages.Get(garageId) then
         return PropertyGarages.Enrich(garageId)
     end

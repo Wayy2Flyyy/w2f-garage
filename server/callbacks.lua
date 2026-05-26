@@ -13,7 +13,9 @@ local function localeMessage(code)
         vehicle_not_found = Locale.no_vehicles,
         property_disabled = Locale.property_disabled,
         coords_not_ready = Locale.coords_not_ready,
-        garage_full = Locale.garage_full
+        garage_full = Locale.garage_full,
+        public_disabled = Locale.public_disabled,
+        not_enough_money = Locale.not_enough_money
     }
 
     return messages[code] or code or Locale.not_implemented
@@ -62,6 +64,10 @@ function Callbacks.Register()
     end)
 
     register(W2F_GARAGE.Callbacks.GetVehicles, function(source, garageId)
+        if BasicPublicGarages.Get(garageId) then
+            return PublicGarage.GetVehicles(source, garageId)
+        end
+
         local access, reason = Security.ValidateGarageAccess(source, garageId)
 
         if not access then
@@ -99,6 +105,10 @@ function Callbacks.Register()
         local plate = ServerUtils.NormalizePlate(data.plate)
         local garageId = data.garageId
 
+        if BasicPublicGarages.Get(garageId) then
+            return PublicGarage.SpawnVehicle(source, garageId, plate)
+        end
+
         if PropertyGarages.Get(garageId) then
             return Property.SpawnVehicle(source, garageId, plate, data.floorIndex)
         end
@@ -120,6 +130,10 @@ function Callbacks.Register()
         data = data or {}
         local plate = ServerUtils.NormalizePlate(data.plate)
         local garageId = data.garageId
+
+        if BasicPublicGarages.Get(garageId) then
+            return PublicGarage.StoreVehicle(source, garageId, data)
+        end
 
         if PropertyGarages.Get(garageId) then
             return Property.StoreVehicle(source, garageId, data)
@@ -279,6 +293,29 @@ function Callbacks.Register()
     register(W2F_GARAGE.Callbacks.PropertyStoreVehicle, function(source, data)
         data = data or {}
         return Property.StoreVehicle(source, data.garageId, data)
+    end)
+
+    register(W2F_GARAGE.Callbacks.GetPublicGarageData, function(source, garageId)
+        return PublicGarage.GetGarageData(garageId)
+    end)
+
+    register(W2F_GARAGE.Callbacks.GetPublicVehicles, function(source, garageId)
+        return PublicGarage.GetVehicles(source, garageId)
+    end)
+
+    register(W2F_GARAGE.Callbacks.StorePublicVehicle, function(source, data)
+        data = data or {}
+        return PublicGarage.StoreVehicle(source, data.garageId, data)
+    end)
+
+    register(W2F_GARAGE.Callbacks.SpawnPublicVehicle, function(source, data)
+        data = data or {}
+        return PublicGarage.SpawnVehicle(source, data.garageId, data.plate)
+    end)
+
+    register(W2F_GARAGE.Callbacks.PayPublicStorageFee, function(source, data)
+        data = data or {}
+        return PublicGarage.PayStorageFee(source, data.garageId, data.plate)
     end)
 
     Callbacks.Registered = true

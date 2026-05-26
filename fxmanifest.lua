@@ -19,6 +19,7 @@ shared_scripts {
     'shared/config.lua',
     'shared/interiors.lua',
     'shared/propertyGarages.lua',
+    'shared/publicGarages.lua',
     'shared/garages.lua',
     'shared/vehicles.lua'
 }
@@ -40,6 +41,7 @@ server_scripts {
     'server/slotManager.lua',
     'server/interiors.lua',
     'server/property.lua',
+    'server/publicGarage.lua',
     'server/callbacks.lua',
     'server/admin.lua',
     'server/main.lua'
@@ -56,6 +58,7 @@ client_scripts {
     'client/store.lua',
     'client/interiors.lua',
     'client/property.lua',
+    'client/publicGarage.lua',
     'client/nui.lua',
     'client/zones.lua',
     'client/targets.lua',

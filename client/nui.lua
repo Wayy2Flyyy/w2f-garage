@@ -35,6 +35,40 @@ function Nui.LoadGarageData(garageId)
     Nui.Send('setVehicles', vehicleResponse and vehicleResponse.data or {})
 end
 
+function Nui.OpenPublicGarage(garageId)
+    local garage = BasicPublicGarages.Enrich(garageId)
+
+    if not garage then
+        ClientUtils.Notify(Locale.invalid_garage, 'error')
+        return false
+    end
+
+    Nui.Open = true
+    Nui.CurrentGarage = garageId
+    Nui.CurrentMode = 'public'
+
+    SetNuiFocus(true, true)
+
+    if not (Config.PublicGarages and Config.PublicGarages.useMenuOnly) then
+        Camera.FocusGarage(garage)
+    end
+
+    local vehicleResponse = lib.callback.await(W2F_GARAGE.Callbacks.GetPublicVehicles, false, garageId)
+
+    Nui.Send('openPublicGarage', {
+        garageId = garageId,
+        garage = ClientUtils.ToPlainTable(garage),
+        data = vehicleResponse and vehicleResponse.data or vehicleResponse,
+        config = {
+            title = garage.label or 'Public Garage',
+            subtitle = Locale.public_unlimited_storage,
+            accent = '#5ea8ff'
+        }
+    })
+
+    return true
+end
+
 function Nui.OpenGarage(garageId)
     local garage = ClientUtils.GetGarage(garageId)
 
@@ -45,6 +79,7 @@ function Nui.OpenGarage(garageId)
 
     Nui.Open = true
     Nui.CurrentGarage = garageId
+    Nui.CurrentMode = 'garage'
 
     SetNuiFocus(true, true)
     Camera.FocusGarage(garage)
@@ -66,6 +101,7 @@ end
 function Nui.CloseGarage()
     Nui.Open = false
     Nui.CurrentGarage = nil
+    Nui.CurrentMode = nil
     SetNuiFocus(false, false)
     Camera.Destroy()
     Nui.Send('closeGarage')
@@ -86,7 +122,30 @@ function Nui.RegisterCallbacks()
     end)
 
     nuiCallback('spawnVehicle', function(data)
-        return Spawn.RequestVehicle(data.garageId or Nui.CurrentGarage, data.plate)
+        local garageId = data.garageId or Nui.CurrentGarage
+
+        if Nui.CurrentMode == 'public' or BasicPublicGarages.Get(garageId) then
+            local result = lib.callback.await(W2F_GARAGE.Callbacks.SpawnPublicVehicle, false, {
+                garageId = garageId,
+                plate = data.plate
+            })
+
+            if result and result.success then
+                Nui.CloseGarage()
+            end
+
+            return result
+        end
+
+        return Spawn.RequestVehicle(garageId, data.plate)
+    end)
+
+    nuiCallback('payPublicFee', function(data)
+        return lib.callback.await(W2F_GARAGE.Callbacks.PayPublicStorageFee, false, data)
+    end)
+
+    nuiCallback('refreshPublicGarage', function(data)
+        return lib.callback.await(W2F_GARAGE.Callbacks.GetPublicVehicles, false, data.garageId or Nui.CurrentGarage)
     end)
 
     nuiCallback('storeVehicle', function(data)

@@ -4,6 +4,7 @@ W2F_GARAGE.RESOURCE = GetCurrentResourceName and GetCurrentResourceName() or 'w2
 
 W2F_GARAGE.VehicleStates = {
     STORED = 'stored',
+    STORED_PUBLIC = 'stored_public',
     OUT = 'out',
     IMPOUNDED = 'impounded',
     DESTROYED = 'destroyed',
@@ -13,7 +14,6 @@ W2F_GARAGE.VehicleStates = {
     UNKNOWN = 'unknown'
 }
 
--- Legacy alias
 W2F_GARAGE.VehicleStates.REPAIR = W2F_GARAGE.VehicleStates.IN_REPAIR
 
 W2F_GARAGE.GarageTypes = {
@@ -37,6 +37,7 @@ W2F_GARAGE.PropertyClasses = {
 
 W2F_GARAGE.Events = {
     OpenGarage = 'w2f-garage:client:openGarage',
+    OpenPublicGarage = 'w2f-garage:client:openPublicGarage',
     CloseGarage = 'w2f-garage:client:closeGarage',
     EnterGarage = 'w2f-garage:client:enterGarage',
     ExitGarage = 'w2f-garage:client:exitGarage',
@@ -74,7 +75,12 @@ W2F_GARAGE.Callbacks = {
     GetGarageVehicles = 'w2f-garage:server:getGarageVehicles',
     PropertySpawnVehicle = 'w2f-garage:server:propertySpawnVehicle',
     PropertyStoreVehicle = 'w2f-garage:server:propertyStoreVehicle',
-    GetPropertyDashboard = 'w2f-garage:server:getPropertyDashboard'
+    GetPropertyDashboard = 'w2f-garage:server:getPropertyDashboard',
+    GetPublicGarageData = 'w2f-garage:server:getPublicGarageData',
+    GetPublicVehicles = 'w2f-garage:server:getPublicVehicles',
+    StorePublicVehicle = 'w2f-garage:server:storePublicVehicle',
+    SpawnPublicVehicle = 'w2f-garage:server:spawnPublicVehicle',
+    PayPublicStorageFee = 'w2f-garage:server:payPublicStorageFee'
 }
 
 W2F_GARAGE.LogActions = {
@@ -94,7 +100,10 @@ W2F_GARAGE.LogActions = {
     GARAGE_ENTER = 'garage_enter',
     GARAGE_EXIT = 'garage_exit',
     SLOT_ASSIGNED = 'slot_assigned',
-    SLOT_MOVED = 'slot_moved'
+    SLOT_MOVED = 'slot_moved',
+    PUBLIC_STORED = 'public_vehicle_stored',
+    PUBLIC_SPAWNED = 'public_vehicle_spawned',
+    PUBLIC_FEE_PAID = 'public_storage_fee_paid'
 }
 
 W2F_GARAGE.ValidFrameworks = {

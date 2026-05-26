@@ -8,7 +8,9 @@ local function startup()
         framework = Bridge.ActiveFramework,
         publicGarages = ServerUtils.TableCount(Garages.List),
         propertyGarages = ServerUtils.TableCount(PropertyGarages.GetAll()),
+        publicGarages = ServerUtils.TableCount(BasicPublicGarages.GetAll()),
         propertyEnabled = Config.Property and Config.Property.Enabled,
+        publicGaragesEnabled = Config.PublicGarages and Config.PublicGarages.enabled,
         databaseEnabled = Config.Database.Enabled,
         databaseSafeMode = Database.IsSafeMode(),
         inventory = Config.Inventory,
@@ -96,4 +98,16 @@ end)
 
 exports('EnterPropertyGarage', function(source, garageId, floorIndex)
     return Property.EnterGarage(source, garageId, floorIndex)
+end)
+
+exports('StorePublicVehicle', function(source, garageId, vehicleData)
+    return PublicGarage.StoreVehicle(source, garageId, vehicleData)
+end)
+
+exports('SpawnPublicVehicle', function(source, garageId, plate)
+    return PublicGarage.SpawnVehicle(source, garageId, plate)
+end)
+
+exports('GetPublicGarageVehicles', function(source, garageId)
+    return PublicGarage.GetVehicles(source, garageId)
 end)

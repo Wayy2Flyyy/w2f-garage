@@ -59,7 +59,14 @@ Locales.en = {
     slot_occupied = 'That slot is already occupied.',
     move_failed = 'Could not move vehicle slot.',
     no_vehicle_nearby = 'No vehicle nearby to store.',
-    no_vehicle = 'No vehicle found.'
+    no_vehicle = 'No vehicle found.',
+    public_disabled = 'Public garages are disabled.',
+    public_unlimited_storage = 'Unlimited storage · $700/day per vehicle',
+    public_vehicle_stored = 'Vehicle stored at public garage.',
+    public_already_stored = 'This vehicle is already in public storage.',
+    public_wrong_garage = 'Collect this vehicle from the garage where it was stored.',
+    public_fee_paid = 'Paid $%s storage fees.',
+    invalid_vehicle_state = 'Vehicle is not in a valid state for this action.'
 }
 
 Locale = Locales.en

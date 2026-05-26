@@ -113,6 +113,22 @@ Config.Database.W2FTables.garageSlots = 'w2f_garage_slots'
 Config.Database.W2FTables.garageInteriors = 'w2f_garage_interiors'
 Config.Database.W2FTables.garageVehiclePositions = 'w2f_garage_vehicle_positions'
 Config.Database.W2FTables.purchaseLogs = 'w2f_garage_purchase_logs'
+Config.Database.W2FTables.publicGarageVehicles = 'w2f_public_garage_vehicles'
+
+Config.PublicGarages = {
+    enabled = true,
+    sharedPublicStorage = true,
+    maxVehicles = false,
+    dailyVehicleFee = 700,
+    billingMode = 'realtime',
+    realtimeDayHours = 24,
+    requirePaymentBeforeSpawn = true,
+    autoChargeOnSpawn = true,
+    allowNegativeBalance = false,
+    chargeOnlyFullDays = true,
+    useMenuOnly = true,
+    paymentAccount = 'bank',
+}
 
 Config.DebugCommands = {
     OpenGarage = true,
