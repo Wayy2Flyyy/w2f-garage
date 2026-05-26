@@ -55,5 +55,11 @@ client_scripts {
     'client/main.lua'
 }
 
--- NUI runtime entries are added once the React/Vite baseline is built.
+ui_page 'web/dist/index.html'
+
+files {
+    'web/dist/index.html',
+    'web/dist/assets/*'
+}
+
 -- SQL migrations are intentionally not run from the manifest.
