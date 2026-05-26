@@ -90,6 +90,11 @@ function Security.ValidateVehicleOwnership(source, plate)
         return false, 'missing_identifier'
     end
 
+    if not Config.Database.ExistingVehicleTable or not Config.Database.Columns or not Config.Database.Columns.owner or not Config.Database.Columns.plate then
+        Logs.Security(source, W2F_GARAGE.LogActions.INVALID_OWNERSHIP, { plate = plate, reason = 'vehicle_ownership_not_configured' })
+        return false, 'vehicle_ownership_not_configured'
+    end
+
     local vehicle = Database.GetVehicleByPlate(plate)
 
     if not vehicle then

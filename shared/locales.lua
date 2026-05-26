@@ -66,6 +66,8 @@ Locales.en = {
     public_already_stored = 'This vehicle is already in public storage.',
     public_wrong_garage = 'Collect this vehicle from the garage where it was stored.',
     public_fee_paid = 'Paid $%s storage fees.',
+    public_manual_payment_required = 'Pay storage fees manually before spawning this vehicle.',
+    vehicle_ownership_not_configured = 'Vehicle ownership database is not configured.',
     invalid_vehicle_state = 'Vehicle is not in a valid state for this action.'
 }
 

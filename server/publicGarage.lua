@@ -43,20 +43,26 @@ function PublicGarage.CalculateBillableDays(storedAt, cfg)
     return math.ceil(elapsed / secondsPerDay)
 end
 
+local function billingAnchor(record)
+    local storedAt = PublicGarage.GetStoredTimestamp(record)
+    if type(storedAt) ~= "number" then
+        storedAt = os.time()
+    end
+
+    local paidUntil = tonumber(record and record.paid_until) or storedAt
+    return math.max(storedAt, paidUntil), storedAt
+end
+
 function PublicGarage.CalculateStorageFee(record, garageId)
     if not record or record.state ~= W2F_GARAGE.VehicleStates.STORED_PUBLIC then
         return 0, 0, 0
     end
 
     local cfg = settings()
-    local storedAt = PublicGarage.GetStoredTimestamp(record)
-
-    if type(storedAt) ~= 'number' then
-        storedAt = os.time()
-    end
+    local anchor = billingAnchor(record)
 
     local dailyFee = record.daily_fee or BasicPublicGarages.GetDailyFee(garageId or record.garage_id)
-    local days = PublicGarage.CalculateBillableDays(storedAt, cfg)
+    local days = PublicGarage.CalculateBillableDays(anchor, cfg)
     local fee = days * dailyFee
 
     return fee, days, dailyFee
@@ -92,6 +98,7 @@ function PublicGarage.FormatVehicleForClient(record, garageId, locationLabel)
         storedForHours = hours,
         storedForDays = days,
         dailyFee = dailyFee,
+        paidUntil = now,
         unpaidFee = fee,
         props = record.vehicle_props,
         canSpawn = fee <= 0 or not settings().requirePaymentBeforeSpawn
@@ -202,7 +209,8 @@ function PublicGarage.StoreVehicle(source, garageId, vehicleData)
         storedAt = now,
         lastFeeCalculatedAt = now,
         unpaidFee = 0,
-        dailyFee = dailyFee
+        dailyFee = dailyFee,
+        paidUntil = now
     })
 
     VehicleState.ActiveVehicles[plate] = nil
@@ -220,7 +228,7 @@ function PublicGarage.StoreVehicle(source, garageId, vehicleData)
     return ServerUtils.Success({ plate = plate, garageId = garageId })
 end
 
-function PublicGarage.ChargeFee(source, plate, fee)
+function PublicGarage.ChargeManualFee(source, plate, fee)
     fee = math.floor(tonumber(fee) or 0)
 
     if fee <= 0 then
@@ -230,19 +238,34 @@ function PublicGarage.ChargeFee(source, plate, fee)
     local cfg = settings()
     local account = cfg.paymentAccount or 'bank'
 
-    if cfg.allowNegativeBalance then
-        Bridge.RemoveMoney(source, account, fee, 'w2f-garage public storage')
-        return true, fee
-    end
-
-    if not Bridge.HasMoney(source, account, fee) then
+    if not cfg.allowNegativeBalance and not Bridge.HasMoney(source, account, fee) then
+        Logs.GarageAction(W2F_GARAGE.LogActions.PUBLIC_FEE_PAYMENT_FAILED, source, plate, nil, { fee = fee, reason = 'not_enough_money' })
         return false, 'not_enough_money'
     end
 
-    if cfg.autoChargeOnSpawn ~= false then
-        Bridge.RemoveMoney(source, account, fee, 'w2f-garage public storage')
+    Bridge.RemoveMoney(source, account, fee, 'w2f-garage public storage manual')
+    return true, fee
+end
+
+function PublicGarage.ChargeSpawnFee(source, plate, fee)
+    fee = math.floor(tonumber(fee) or 0)
+
+    if fee <= 0 then
+        return true, 0
     end
 
+    local cfg = settings()
+
+    if cfg.requirePaymentBeforeSpawn and cfg.autoChargeOnSpawn == false then
+        return false, 'manual_payment_required'
+    end
+
+    local account = cfg.paymentAccount or 'bank'
+    if not cfg.allowNegativeBalance and not Bridge.HasMoney(source, account, fee) then
+        return false, 'not_enough_money'
+    end
+
+    Bridge.RemoveMoney(source, account, fee, 'w2f-garage public storage spawn')
     return true, fee
 end
 
@@ -286,10 +309,10 @@ function PublicGarage.SpawnVehicle(source, garageId, plate)
     local fee = PublicGarage.SyncUnpaidFee(record, garageId)
 
     if cfg.requirePaymentBeforeSpawn and fee > 0 then
-        local paid, payReason = PublicGarage.ChargeFee(source, plate, fee)
+        local paid, payReason = PublicGarage.ChargeManualFee(source, plate, fee)
 
         if not paid then
-            return ServerUtils.Failure(payReason, Locale.not_enough_money, {
+            return ServerUtils.Failure(payReason, payReason == 'manual_payment_required' and Locale.public_manual_payment_required or Locale.not_enough_money, {
                 unpaidFee = fee,
                 plate = plate
             })
@@ -307,6 +330,7 @@ function PublicGarage.SpawnVehicle(source, garageId, plate)
     Database.UpdatePublicVehicleState(plate, W2F_GARAGE.VehicleStates.OUT, {
         unpaidFee = 0,
         lastFeeCalculatedAt = now,
+        paidUntil = now,
         lastSpawnedAt = now,
         garageId = garageId
     })
@@ -343,13 +367,13 @@ function PublicGarage.PayStorageFee(source, garageId, plate)
     end
 
     local fee = PublicGarage.SyncUnpaidFee(record, garageId)
-    local paid, payReason = PublicGarage.ChargeFee(source, plate, fee)
+    local paid, payReason = PublicGarage.ChargeSpawnFee(source, plate, fee)
 
     if not paid then
         return ServerUtils.Failure(payReason, Locale.not_enough_money)
     end
 
-    Database.SetPublicUnpaidFee(plate, 0, os.time())
+    Database.SetPublicUnpaidFee(plate, 0, os.time(), os.time())
     Logs.GarageAction(W2F_GARAGE.LogActions.PUBLIC_FEE_PAID, source, plate, garageId, { fee = fee })
 
     return ServerUtils.Success({ plate = plate, feePaid = fee })
@@ -357,7 +381,7 @@ end
 
 function PublicGarage.AdminClearFee(plate)
     plate = ServerUtils.NormalizePlate(plate)
-    Database.SetPublicUnpaidFee(plate, 0, os.time())
+    Database.SetPublicUnpaidFee(plate, 0, os.time(), os.time())
     return true
 end
 
