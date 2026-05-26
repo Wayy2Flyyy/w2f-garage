@@ -552,3 +552,119 @@ button {
 .empty-copy {
   color: var(--muted);
 }
+
+.public-layout {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  padding: 18px;
+  gap: 14px;
+}
+
+.public-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.public-header h2 {
+  margin: 0 0 6px;
+}
+
+.public-header p,
+.public-header small {
+  margin: 0;
+  color: var(--muted);
+}
+
+.public-totals {
+  text-align: right;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px 16px;
+  background: rgba(94, 168, 255, 0.08);
+}
+
+.public-totals span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.public-totals strong {
+  font-size: 1.4rem;
+  color: #8ec5ff;
+}
+
+.public-toolbar input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  color: inherit;
+  padding: 12px 14px;
+}
+
+.public-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.public-vehicle-card {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.public-vehicle-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.public-vehicle-top strong {
+  display: block;
+}
+
+.public-vehicle-top span {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.public-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 12px;
+  margin: 0 0 14px;
+}
+
+.public-stats dt {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.public-stats dd {
+  margin: 2px 0 0;
+  font-size: 0.88rem;
+}
+
+.public-actions button {
+  width: 100%;
+  border: none;
+  border-radius: 12px;
+  padding: 12px;
+  background: #5ea8ff;
+  color: #0a1018;
+  font-weight: 700;
+}
+
+.public-actions button:disabled {
+  opacity: 0.45;
+}

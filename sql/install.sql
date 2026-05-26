@@ -197,6 +197,31 @@ CREATE TABLE IF NOT EXISTS `w2f_garage_purchase_logs` (
     KEY `idx_w2f_purchase_garage` (`garage_id`)
 );
 
+CREATE TABLE IF NOT EXISTS `w2f_public_garage_vehicles` (
+    `plate` VARCHAR(16) NOT NULL,
+    `owner_identifier` VARCHAR(96) NOT NULL,
+    `garage_id` VARCHAR(64) NOT NULL,
+    `garage_type` VARCHAR(32) NOT NULL DEFAULT 'public',
+    `model` VARCHAR(64) NULL,
+    `vehicle_props` JSON NULL,
+    `fuel` FLOAT NULL,
+    `engine_health` FLOAT NULL,
+    `body_health` FLOAT NULL,
+    `dirt_level` FLOAT NULL,
+    `state` VARCHAR(32) NOT NULL DEFAULT 'stored_public',
+    `stored_at` BIGINT UNSIGNED NOT NULL,
+    `last_fee_calculated_at` BIGINT UNSIGNED NOT NULL,
+    `unpaid_fee` INT UNSIGNED NOT NULL DEFAULT 0,
+    `daily_fee` INT UNSIGNED NOT NULL DEFAULT 700,
+    `last_spawned_at` BIGINT UNSIGNED NULL DEFAULT NULL,
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`plate`),
+    KEY `idx_w2f_public_owner` (`owner_identifier`),
+    KEY `idx_w2f_public_garage` (`garage_id`),
+    KEY `idx_w2f_public_state` (`state`)
+);
+
 CREATE TABLE IF NOT EXISTS `w2f_garage_favourites` (
     `owner_identifier` VARCHAR(96) NOT NULL,
     `plate` VARCHAR(16) NOT NULL,

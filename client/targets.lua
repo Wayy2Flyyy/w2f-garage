@@ -112,6 +112,62 @@ function Targets.AddStoreTargets(garage)
     return true
 end
 
+function Targets.InitPublic()
+    if not targetReady() or not BasicPublicGarages.IsEnabled() then
+        return false
+    end
+
+    for garageId, garage in pairs(BasicPublicGarages.GetAll()) do
+        if garage.coords then
+            local entryZone = ('w2f_public_entry_%s'):format(garageId)
+
+            exports.ox_target:addSphereZone({
+                name = entryZone,
+                coords = garage.coords,
+                radius = Config.Target.InteractionDistance or 2.5,
+                debug = Config.Debug,
+                options = {
+                    {
+                        name = entryZone .. '_open',
+                        icon = 'fa-solid fa-warehouse',
+                        label = garage.label,
+                        onSelect = function()
+                            ClientPublicGarage.Open(garageId)
+                        end
+                    }
+                }
+            })
+
+            Targets.Zones[#Targets.Zones + 1] = entryZone
+        end
+
+        if garage.storeCoords then
+            local storeZone = ('w2f_public_store_%s'):format(garageId)
+
+            exports.ox_target:addSphereZone({
+                name = storeZone,
+                coords = garage.storeCoords,
+                radius = Config.Target.InteractionDistance or 2.5,
+                debug = Config.Debug,
+                options = {
+                    {
+                        name = storeZone .. '_store',
+                        icon = 'fa-solid fa-square-parking',
+                        label = 'Store Vehicle',
+                        onSelect = function()
+                            ClientPublicGarage.Store(garageId)
+                        end
+                    }
+                }
+            })
+
+            Targets.Zones[#Targets.Zones + 1] = storeZone
+        end
+    end
+
+    return true
+end
+
 function Targets.InitProperty()
     if not targetReady() or not Config.Property or not Config.Property.Enabled then
         return false

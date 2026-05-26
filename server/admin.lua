@@ -206,6 +206,55 @@ function Admin.RegisterCommands()
         end)
     end, false)
 
+    RegisterCommand('cleargaragefee', function(source, args)
+        guardedCommand(source, function()
+            local plate = ServerUtils.NormalizePlate(args[1])
+
+            if not plate then
+                reply(source, 'Usage: /cleargaragefee <plate>', 'error')
+                return
+            end
+
+            PublicGarage.AdminClearFee(plate)
+            reply(source, ('Cleared public storage fee for %s.'):format(plate), 'success')
+        end)
+    end, false)
+
+    RegisterCommand('setgaragefee', function(source, args)
+        guardedCommand(source, function()
+            local plate = ServerUtils.NormalizePlate(args[1])
+            local amount = tonumber(args[2])
+
+            if not plate or amount == nil then
+                reply(source, 'Usage: /setgaragefee <plate> <amount>', 'error')
+                return
+            end
+
+            PublicGarage.AdminSetFee(plate, amount)
+            reply(source, ('Set public storage fee for %s to $%s.'):format(plate, amount), 'success')
+        end)
+    end, false)
+
+    RegisterCommand('checkgaragefee', function(source, args)
+        guardedCommand(source, function()
+            local plate = ServerUtils.NormalizePlate(args[1])
+
+            if not plate then
+                reply(source, 'Usage: /checkgaragefee <plate>', 'error')
+                return
+            end
+
+            local fee, days, daily = PublicGarage.AdminGetFee(plate)
+
+            if fee == nil then
+                reply(source, ('No public storage record for %s.'):format(plate), 'error')
+                return
+            end
+
+            reply(source, ('%s: $%s unpaid (%s full days @ $%s/day).'):format(plate, fee, days, daily), 'inform')
+        end)
+    end, false)
+
     Admin.Registered = true
     return true
 end

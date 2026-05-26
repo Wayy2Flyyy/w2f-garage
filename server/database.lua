@@ -667,3 +667,230 @@ function Database.UpdateGarageSlotTimestamps(garageId, plate, flags)
 
     return true
 end
+
+-- Public garage storage (separate from property garages)
+Database._memoryPublic = Database._memoryPublic or {}
+
+local function publicTable()
+    return Config.Database.W2FTables.publicGarageVehicles or 'w2f_public_garage_vehicles'
+end
+
+function Database.UsePublicPersistence()
+    return Config.PublicGarages and Config.PublicGarages.enabled
+        and enabled()
+        and hasOxMySQL()
+        and not safeMode()
+end
+
+function Database.GetPublicVehicle(plate)
+    plate = ServerUtils.NormalizePlate(plate)
+
+    if not plate then
+        return nil
+    end
+
+    if Database.UsePublicPersistence() then
+        return MySQL.single.await(
+            ('SELECT * FROM `%s` WHERE `plate` = ? LIMIT 1'):format(publicTable()),
+            { plate }
+        )
+    end
+
+    return Database._memoryPublic[plate]
+end
+
+function Database.GetPublicVehiclesByOwner(identifier, garageId, sharedStorage)
+    if not identifier then
+        return {}
+    end
+
+    if Database.UsePublicPersistence() then
+        local query = ('SELECT * FROM `%s` WHERE `owner_identifier` = ? AND `state` = ?'):format(publicTable())
+        local params = { identifier, W2F_GARAGE.VehicleStates.STORED_PUBLIC }
+
+        if not sharedStorage and garageId then
+            query = query .. ' AND `garage_id` = ?'
+            params[#params + 1] = garageId
+        end
+
+        return MySQL.query.await(query, params) or {}
+    end
+
+    local rows = {}
+
+    for _, row in pairs(Database._memoryPublic) do
+        if row.owner_identifier == identifier and row.state == W2F_GARAGE.VehicleStates.STORED_PUBLIC then
+            if sharedStorage or not garageId or row.garage_id == garageId then
+                rows[#rows + 1] = row
+            end
+        end
+    end
+
+    return rows
+end
+
+function Database.UpsertPublicVehicle(entry)
+    entry.plate = ServerUtils.NormalizePlate(entry.plate)
+
+    if not entry.plate then
+        return false
+    end
+
+    local now = os.time()
+
+    if Database.UsePublicPersistence() then
+        MySQL.insert.await(
+            ([[INSERT INTO `%s`
+                (`plate`, `owner_identifier`, `garage_id`, `garage_type`, `model`, `vehicle_props`, `fuel`, `engine_health`, `body_health`, `dirt_level`, `state`, `stored_at`, `last_fee_calculated_at`, `unpaid_fee`, `daily_fee`)
+              VALUES (?, ?, ?, 'public', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              ON DUPLICATE KEY UPDATE
+                `owner_identifier` = VALUES(`owner_identifier`),
+                `garage_id` = VALUES(`garage_id`),
+                `model` = VALUES(`model`),
+                `vehicle_props` = VALUES(`vehicle_props`),
+                `fuel` = VALUES(`fuel`),
+                `engine_health` = VALUES(`engine_health`),
+                `body_health` = VALUES(`body_health`),
+                `dirt_level` = VALUES(`dirt_level`),
+                `state` = VALUES(`state`),
+                `stored_at` = VALUES(`stored_at`),
+                `last_fee_calculated_at` = VALUES(`last_fee_calculated_at`),
+                `unpaid_fee` = VALUES(`unpaid_fee`),
+                `daily_fee` = VALUES(`daily_fee`)]]):format(publicTable()),
+            {
+                entry.plate,
+                entry.ownerIdentifier,
+                entry.garageId,
+                entry.model,
+                encode(entry.vehicleProps),
+                entry.fuel,
+                entry.engineHealth,
+                entry.bodyHealth,
+                entry.dirtLevel,
+                entry.state or W2F_GARAGE.VehicleStates.STORED_PUBLIC,
+                entry.storedAt or now,
+                entry.lastFeeCalculatedAt or now,
+                entry.unpaidFee or 0,
+                entry.dailyFee or 700
+            }
+        )
+
+        return true
+    end
+
+    Database._memoryPublic[entry.plate] = {
+        plate = entry.plate,
+        owner_identifier = entry.ownerIdentifier,
+        garage_id = entry.garageId,
+        garage_type = 'public',
+        model = entry.model,
+        vehicle_props = entry.vehicleProps,
+        fuel = entry.fuel,
+        engine_health = entry.engineHealth,
+        body_health = entry.bodyHealth,
+        dirt_level = entry.dirtLevel,
+        state = entry.state or W2F_GARAGE.VehicleStates.STORED_PUBLIC,
+        stored_at = entry.storedAt or now,
+        last_fee_calculated_at = entry.lastFeeCalculatedAt or now,
+        unpaid_fee = entry.unpaidFee or 0,
+        daily_fee = entry.dailyFee or 700,
+        last_spawned_at = entry.lastSpawnedAt
+    }
+
+    return true
+end
+
+function Database.UpdatePublicVehicleState(plate, state, extra)
+    plate = ServerUtils.NormalizePlate(plate)
+    extra = extra or {}
+
+    if Database.UsePublicPersistence() then
+        local querySets = { '`state` = ?' }
+        local params = { state }
+
+        if extra.unpaidFee ~= nil then
+            querySets[#querySets + 1] = '`unpaid_fee` = ?'
+            params[#params + 1] = extra.unpaidFee
+        end
+
+        if extra.lastFeeCalculatedAt then
+            querySets[#querySets + 1] = '`last_fee_calculated_at` = ?'
+            params[#params + 1] = extra.lastFeeCalculatedAt
+        end
+
+        if extra.lastSpawnedAt then
+            querySets[#querySets + 1] = '`last_spawned_at` = ?'
+            params[#params + 1] = extra.lastSpawnedAt
+        end
+
+        if extra.garageId then
+            querySets[#querySets + 1] = '`garage_id` = ?'
+            params[#params + 1] = extra.garageId
+        end
+
+        params[#params + 1] = plate
+
+        return (MySQL.update.await(
+            ('UPDATE `%s` SET %s WHERE `plate` = ?'):format(publicTable(), table.concat(querySets, ', ')),
+            params
+        ) or 0) > 0
+    end
+
+    local row = Database._memoryPublic[plate]
+
+    if not row then
+        return false
+    end
+
+    row.state = state
+
+    if extra.unpaidFee ~= nil then
+        row.unpaid_fee = extra.unpaidFee
+    end
+
+    if extra.lastFeeCalculatedAt then
+        row.last_fee_calculated_at = extra.lastFeeCalculatedAt
+    end
+
+    if extra.lastSpawnedAt then
+        row.last_spawned_at = extra.lastSpawnedAt
+    end
+
+    return true
+end
+
+function Database.SetPublicUnpaidFee(plate, fee, lastCalculatedAt)
+    plate = ServerUtils.NormalizePlate(plate)
+    lastCalculatedAt = lastCalculatedAt or os.time()
+
+    if Database.UsePublicPersistence() then
+        return (MySQL.update.await(
+            ('UPDATE `%s` SET `unpaid_fee` = ?, `last_fee_calculated_at` = ? WHERE `plate` = ?'):format(publicTable()),
+            { fee, lastCalculatedAt, plate }
+        ) or 0) > 0
+    end
+
+    local row = Database._memoryPublic[plate]
+
+    if row then
+        row.unpaid_fee = fee
+        row.last_fee_calculated_at = lastCalculatedAt
+        return true
+    end
+
+    return false
+end
+
+function Database.DeletePublicVehicle(plate)
+    plate = ServerUtils.NormalizePlate(plate)
+
+    if Database.UsePublicPersistence() then
+        return (MySQL.update.await(
+            ('DELETE FROM `%s` WHERE `plate` = ?'):format(publicTable()),
+            { plate }
+        ) or 0) > 0
+    end
+
+    Database._memoryPublic[plate] = nil
+    return true
+end

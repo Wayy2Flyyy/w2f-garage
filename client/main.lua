@@ -40,8 +40,10 @@ function Client.Start()
     Nui.RegisterCallbacks()
     createBlips()
     ClientProperty.InitBlips()
+    ClientPublicGarage.InitBlips()
     Targets.Init()
     Targets.InitProperty()
+    Targets.InitPublic()
     Zones.Init()
     Zones.InitProperty()
 
@@ -63,6 +65,7 @@ function Client.Stop()
     Camera.Destroy()
     removeBlips()
     ClientProperty.DestroyBlips()
+    ClientPublicGarage.DestroyBlips()
 end
 
 CreateThread(function()
