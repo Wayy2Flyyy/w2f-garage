@@ -30,6 +30,16 @@ function PublicGarage.CalculateBillableDays(anchor, cfg)
     return math.ceil(elapsed / secondsPerDay)
 end
 
+local function billingAnchor(record)
+    local storedAt = PublicGarage.GetStoredTimestamp(record)
+    if type(storedAt) ~= "number" then
+        storedAt = os.time()
+    end
+
+    local paidUntil = tonumber(record and record.paid_until) or storedAt
+    return math.max(storedAt, paidUntil), storedAt
+end
+
 function PublicGarage.CalculateStorageFee(record, garageId)
     if not record or record.state ~= W2F_GARAGE.VehicleStates.STORED_PUBLIC then return 0, 0, 0, os.time() end
     local anchor = getBillingAnchor(record)
@@ -81,6 +91,7 @@ function PublicGarage.FormatVehicleForClient(record, garageId, locationLabel)
         storedForHours = math.floor(math.max(0, os.time() - storedAt) / 3600),
         storedForDays = days,
         dailyFee = dailyFee,
+        paidUntil = now,
         unpaidFee = fee,
         billingStatus = fee > 0 and 'pending' or 'paid',
         billProvider = settings().billingProvider or 'internal',
