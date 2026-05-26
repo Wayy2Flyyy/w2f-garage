@@ -115,6 +115,88 @@ CREATE TABLE IF NOT EXISTS `w2f_garage_mileage` (
     KEY `idx_w2f_mileage_owner` (`owner_identifier`)
 );
 
+CREATE TABLE IF NOT EXISTS `w2f_owned_garages` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `garage_id` VARCHAR(64) NOT NULL,
+    `owner_identifier` VARCHAR(96) NOT NULL,
+    `purchase_price` INT UNSIGNED NOT NULL DEFAULT 0,
+    `purchase_timestamp` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `interior_template` VARCHAR(64) NULL,
+    `property_class` VARCHAR(32) NULL,
+    `active` TINYINT(1) NOT NULL DEFAULT 1,
+    `used_slots` INT UNSIGNED NOT NULL DEFAULT 0,
+    `current_floor` INT UNSIGNED NOT NULL DEFAULT 1,
+    `metadata` JSON NULL,
+    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_w2f_owned_garage` (`garage_id`, `owner_identifier`),
+    KEY `idx_w2f_owned_owner` (`owner_identifier`),
+    KEY `idx_w2f_owned_garage` (`garage_id`)
+);
+
+CREATE TABLE IF NOT EXISTS `w2f_garage_slots` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `garage_id` VARCHAR(64) NOT NULL,
+    `owner_identifier` VARCHAR(96) NOT NULL,
+    `plate` VARCHAR(16) NOT NULL,
+    `model` VARCHAR(64) NULL,
+    `slot_index` INT UNSIGNED NOT NULL,
+    `floor_index` INT UNSIGNED NOT NULL DEFAULT 1,
+    `slot_type` VARCHAR(16) NOT NULL DEFAULT 'vehicle',
+    `vehicle_props` JSON NULL,
+    `fuel` FLOAT NULL,
+    `engine_health` FLOAT NULL,
+    `body_health` FLOAT NULL,
+    `dirt_level` FLOAT NULL,
+    `locked` TINYINT(1) NOT NULL DEFAULT 1,
+    `state` VARCHAR(32) NOT NULL DEFAULT 'stored',
+    `last_stored_at` TIMESTAMP NULL DEFAULT NULL,
+    `last_spawned_at` TIMESTAMP NULL DEFAULT NULL,
+    `last_location` JSON NULL,
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_w2f_slot_plate` (`garage_id`, `plate`),
+    UNIQUE KEY `uk_w2f_slot_position` (`garage_id`, `owner_identifier`, `slot_index`, `floor_index`, `slot_type`),
+    KEY `idx_w2f_slots_owner` (`owner_identifier`),
+    KEY `idx_w2f_slots_state` (`state`)
+);
+
+CREATE TABLE IF NOT EXISTS `w2f_garage_interiors` (
+    `garage_id` VARCHAR(64) NOT NULL,
+    `interior_template` VARCHAR(64) NOT NULL,
+    `routing_bucket` INT UNSIGNED NULL,
+    `metadata` JSON NULL,
+    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`garage_id`)
+);
+
+CREATE TABLE IF NOT EXISTS `w2f_garage_vehicle_positions` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `garage_id` VARCHAR(64) NOT NULL,
+    `interior_template` VARCHAR(64) NOT NULL,
+    `slot_index` INT UNSIGNED NOT NULL,
+    `floor_index` INT UNSIGNED NOT NULL DEFAULT 1,
+    `slot_type` VARCHAR(16) NOT NULL DEFAULT 'vehicle',
+    `coords` JSON NOT NULL,
+    `heading` FLOAT NULL,
+    `theme` VARCHAR(64) NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_w2f_position` (`garage_id`, `interior_template`, `slot_index`, `floor_index`, `slot_type`)
+);
+
+CREATE TABLE IF NOT EXISTS `w2f_garage_purchase_logs` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `garage_id` VARCHAR(64) NOT NULL,
+    `owner_identifier` VARCHAR(96) NOT NULL,
+    `price` INT UNSIGNED NOT NULL DEFAULT 0,
+    `action` VARCHAR(32) NOT NULL DEFAULT 'purchase',
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_w2f_purchase_owner` (`owner_identifier`),
+    KEY `idx_w2f_purchase_garage` (`garage_id`)
+);
+
 CREATE TABLE IF NOT EXISTS `w2f_garage_favourites` (
     `owner_identifier` VARCHAR(96) NOT NULL,
     `plate` VARCHAR(16) NOT NULL,

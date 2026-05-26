@@ -4,8 +4,8 @@ lua54 'yes'
 
 name 'w2f-garage'
 author 'W2F'
-version '0.1.0-foundation'
-description 'Framework-bridged vehicle garage and management foundation for QBCore, Qbox, and ESX.'
+version '1.0.0'
+description 'Production property garage framework with framework bridge for QBCore, Qbox, and ESX.'
 
 dependencies {
     'ox_lib',
@@ -17,6 +17,8 @@ shared_scripts {
     'shared/constants.lua',
     'shared/locales.lua',
     'shared/config.lua',
+    'shared/interiors.lua',
+    'shared/propertyGarages.lua',
     'shared/garages.lua',
     'shared/vehicles.lua'
 }
@@ -35,6 +37,9 @@ server_scripts {
     'server/database.lua',
     'server/security.lua',
     'server/vehicleState.lua',
+    'server/slotManager.lua',
+    'server/interiors.lua',
+    'server/property.lua',
     'server/callbacks.lua',
     'server/admin.lua',
     'server/main.lua'
@@ -49,6 +54,8 @@ client_scripts {
     'client/camera.lua',
     'client/spawn.lua',
     'client/store.lua',
+    'client/interiors.lua',
+    'client/property.lua',
     'client/nui.lua',
     'client/zones.lua',
     'client/targets.lua',

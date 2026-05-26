@@ -44,6 +44,25 @@ function Database.IsSafeMode()
     return safeMode()
 end
 
+function Database.IsPropertyEnabled()
+    return Config.Property and Config.Property.Enabled == true
+end
+
+function Database.UsePropertyPersistence()
+    return Database.IsPropertyEnabled() and enabled() and hasOxMySQL() and not safeMode()
+end
+
+local function propertyTables()
+    local tables = Config.Database.W2FTables
+    return {
+        owned = tables.ownedGarages or 'w2f_owned_garages',
+        slots = tables.garageSlots or 'w2f_garage_slots',
+        interiors = tables.garageInteriors or 'w2f_garage_interiors',
+        positions = tables.garageVehiclePositions or 'w2f_garage_vehicle_positions',
+        purchaseLogs = tables.purchaseLogs or 'w2f_garage_purchase_logs'
+    }
+end
+
 function Database.GetPlayerVehicles(identifier, options)
     options = options or {}
 
@@ -234,6 +253,417 @@ function Database.SaveVehicleHistory(entry)
         entry.reason,
         encode(entry.metadata)
     })
+
+    return true
+end
+
+-- Property garage tables (in-memory fallback when DB disabled or safe mode)
+Database._memoryOwned = Database._memoryOwned or {}
+Database._memorySlots = Database._memorySlots or {}
+
+local function memoryOwnedKey(identifier, garageId)
+    return ('%s:%s'):format(identifier, garageId)
+end
+
+function Database.PlayerOwnsGarage(identifier, garageId)
+    if not identifier or not garageId then
+        return false
+    end
+
+    if Database.UsePropertyPersistence() then
+        local tables = propertyTables()
+        local row = MySQL.single.await(
+            ('SELECT `id` FROM `%s` WHERE `owner_identifier` = ? AND `garage_id` = ? AND `active` = 1 LIMIT 1'):format(tables.owned),
+            { identifier, garageId }
+        )
+        return row ~= nil
+    end
+
+    return Database._memoryOwned[memoryOwnedKey(identifier, garageId)] ~= nil
+end
+
+function Database.GetOwnedGarages(identifier)
+    if not identifier then
+        return {}
+    end
+
+    if Database.UsePropertyPersistence() then
+        local tables = propertyTables()
+        return MySQL.query.await(
+            ('SELECT * FROM `%s` WHERE `owner_identifier` = ? AND `active` = 1'):format(tables.owned),
+            { identifier }
+        ) or {}
+    end
+
+    local rows = {}
+
+    for _, row in pairs(Database._memoryOwned) do
+        if row.owner_identifier == identifier then
+            rows[#rows + 1] = row
+        end
+    end
+
+    return rows
+end
+
+function Database.CountOwnedGarages(identifier)
+    return #(Database.GetOwnedGarages(identifier) or {})
+end
+
+function Database.CreateOwnedGarage(entry)
+    entry = entry or {}
+
+    if Database.UsePropertyPersistence() then
+        local tables = propertyTables()
+        local id = MySQL.insert.await(
+            ('INSERT INTO `%s` (`garage_id`, `owner_identifier`, `purchase_price`, `interior_template`, `property_class`, `active`) VALUES (?, ?, ?, ?, ?, 1)'):format(tables.owned),
+            {
+                entry.garageId,
+                entry.ownerIdentifier,
+                entry.purchasePrice or 0,
+                entry.interiorTemplate,
+                entry.propertyClass
+            }
+        )
+        return id ~= nil
+    end
+
+    Database._memoryOwned[memoryOwnedKey(entry.ownerIdentifier, entry.garageId)] = {
+        garage_id = entry.garageId,
+        owner_identifier = entry.ownerIdentifier,
+        purchase_price = entry.purchasePrice or 0,
+        interior_template = entry.interiorTemplate,
+        property_class = entry.propertyClass,
+        active = 1,
+        used_slots = 0,
+        purchased_at = os.time()
+    }
+
+    return true
+end
+
+function Database.RemoveOwnedGarage(identifier, garageId)
+    if Database.UsePropertyPersistence() then
+        local tables = propertyTables()
+        return (MySQL.update.await(
+            ('UPDATE `%s` SET `active` = 0 WHERE `owner_identifier` = ? AND `garage_id` = ?'):format(tables.owned),
+            { identifier, garageId }
+        ) or 0) > 0
+    end
+
+    Database._memoryOwned[memoryOwnedKey(identifier, garageId)] = nil
+    return true
+end
+
+function Database.CreatePurchaseLog(entry)
+    if not Database.UsePropertyPersistence() then
+        return true
+    end
+
+    local tables = propertyTables()
+    MySQL.insert.await(
+        ('INSERT INTO `%s` (`garage_id`, `owner_identifier`, `price`, `action`) VALUES (?, ?, ?, ?)'):format(tables.purchaseLogs),
+        { entry.garageId, entry.ownerIdentifier, entry.price or 0, entry.action or 'purchase' }
+    )
+
+    return true
+end
+
+function Database.GetGarageSlots(garageId, ownerIdentifier, floorIndex)
+    if Database.UsePropertyPersistence() then
+        local tables = propertyTables()
+        local query = ('SELECT * FROM `%s` WHERE `garage_id` = ? AND `owner_identifier` = ?'):format(tables.slots)
+        local params = { garageId, ownerIdentifier }
+
+        if floorIndex then
+            query = query .. ' AND `floor_index` = ?'
+            params[#params + 1] = floorIndex
+        end
+
+        return MySQL.query.await(query, params) or {}
+    end
+
+    local rows = {}
+
+    for _, slot in pairs(Database._memorySlots) do
+        if slot.garage_id == garageId and slot.owner_identifier == ownerIdentifier then
+            if not floorIndex or (slot.floor_index or 1) == floorIndex then
+                rows[#rows + 1] = slot
+            end
+        end
+    end
+
+    return rows
+end
+
+function Database.GetGarageSlot(garageId, plate)
+    plate = ServerUtils.NormalizePlate(plate)
+
+    if not plate then
+        return nil
+    end
+
+    if Database.UsePropertyPersistence() then
+        local tables = propertyTables()
+        return MySQL.single.await(
+            ('SELECT * FROM `%s` WHERE `garage_id` = ? AND `plate` = ? LIMIT 1'):format(tables.slots),
+            { garageId, plate }
+        )
+    end
+
+    for _, slot in pairs(Database._memorySlots) do
+        if slot.garage_id == garageId and slot.plate == plate then
+            return slot
+        end
+    end
+
+    return nil
+end
+
+function Database.GetGarageSlotByIndex(garageId, ownerIdentifier, slotIndex, floorIndex)
+    if Database.UsePropertyPersistence() then
+        local tables = propertyTables()
+        return MySQL.single.await(
+            ('SELECT * FROM `%s` WHERE `garage_id` = ? AND `owner_identifier` = ? AND `slot_index` = ? AND `floor_index` = ? LIMIT 1'):format(tables.slots),
+            { garageId, ownerIdentifier, slotIndex, floorIndex or 1 }
+        )
+    end
+
+    for _, slot in pairs(Database._memorySlots) do
+        if slot.garage_id == garageId
+            and slot.owner_identifier == ownerIdentifier
+            and slot.slot_index == slotIndex
+            and (slot.floor_index or 1) == (floorIndex or 1) then
+            return slot
+        end
+    end
+
+    return nil
+end
+
+function Database.GetOccupiedSlotIndexes(garageId, ownerIdentifier, floorIndex)
+    local slots = Database.GetGarageSlots(garageId, ownerIdentifier, floorIndex) or {}
+    local indexes = {}
+
+    for _, slot in ipairs(slots) do
+        indexes[#indexes + 1] = slot.slot_index
+    end
+
+    return indexes
+end
+
+function Database.CountGarageSlots(garageId, ownerIdentifier, slotType)
+    local slots = Database.GetGarageSlots(garageId, ownerIdentifier) or {}
+    local count = 0
+
+    for _, slot in ipairs(slots) do
+        if not slotType or slot.slot_type == slotType then
+            count = count + 1
+        end
+    end
+
+    return count
+end
+
+function Database.PlateExistsInGarage(garageId, plate)
+    return Database.GetGarageSlot(garageId, plate) ~= nil
+end
+
+function Database.AssignGarageSlot(entry)
+    entry.plate = ServerUtils.NormalizePlate(entry.plate)
+
+    if not entry.plate then
+        return false
+    end
+
+    if Database.UsePropertyPersistence() then
+        local tables = propertyTables()
+        local props = encode(entry.vehicleProps)
+        MySQL.insert.await(
+            ('INSERT INTO `%s` (`garage_id`, `owner_identifier`, `plate`, `model`, `slot_index`, `floor_index`, `slot_type`, `vehicle_props`, `fuel`, `engine_health`, `body_health`, `dirt_level`, `locked`, `state`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'):format(tables.slots),
+            {
+                entry.garageId,
+                entry.ownerIdentifier,
+                entry.plate,
+                entry.model,
+                entry.slotIndex,
+                entry.floorIndex or 1,
+                entry.slotType or W2F_GARAGE.SlotTypes.VEHICLE,
+                props,
+                entry.fuel,
+                entry.engineHealth,
+                entry.bodyHealth,
+                entry.dirtLevel,
+                entry.locked and 1 or 0,
+                entry.state or W2F_GARAGE.VehicleStates.STORED
+            }
+        )
+        return true
+    end
+
+    Database._memorySlots[entry.plate] = {
+        garage_id = entry.garageId,
+        owner_identifier = entry.ownerIdentifier,
+        plate = entry.plate,
+        model = entry.model,
+        slot_index = entry.slotIndex,
+        floor_index = entry.floorIndex or 1,
+        slot_type = entry.slotType or W2F_GARAGE.SlotTypes.VEHICLE,
+        vehicle_props = entry.vehicleProps,
+        fuel = entry.fuel,
+        engine_health = entry.engineHealth,
+        body_health = entry.bodyHealth,
+        dirt_level = entry.dirtLevel,
+        locked = entry.locked,
+        state = entry.state or W2F_GARAGE.VehicleStates.STORED
+    }
+
+    return true
+end
+
+function Database.RemoveGarageSlot(garageId, plate)
+    plate = ServerUtils.NormalizePlate(plate)
+
+    if Database.UsePropertyPersistence() then
+        local tables = propertyTables()
+        return (MySQL.update.await(
+            ('DELETE FROM `%s` WHERE `garage_id` = ? AND `plate` = ?'):format(tables.slots),
+            { garageId, plate }
+        ) or 0) > 0
+    end
+
+    Database._memorySlots[plate] = nil
+    return true
+end
+
+function Database.UpdateGarageSlotState(garageId, plate, state)
+    plate = ServerUtils.NormalizePlate(plate)
+
+    if Database.UsePropertyPersistence() then
+        local tables = propertyTables()
+        return (MySQL.update.await(
+            ('UPDATE `%s` SET `state` = ? WHERE `garage_id` = ? AND `plate` = ?'):format(tables.slots),
+            { state, garageId, plate }
+        ) or 0) > 0
+    end
+
+    local slot = Database._memorySlots[plate]
+
+    if slot then
+        slot.state = state
+        return true
+    end
+
+    return false
+end
+
+function Database.UpdateGarageSlotData(garageId, plate, data)
+    plate = ServerUtils.NormalizePlate(plate)
+
+    if Database.UsePropertyPersistence() then
+        local tables = propertyTables()
+        return (MySQL.update.await(
+            ('UPDATE `%s` SET `model` = ?, `vehicle_props` = ?, `fuel` = ?, `engine_health` = ?, `body_health` = ?, `dirt_level` = ?, `locked` = ?, `state` = ? WHERE `garage_id` = ? AND `plate` = ?'):format(tables.slots),
+            {
+                data.model,
+                encode(data.props),
+                data.fuel,
+                data.engineHealth,
+                data.bodyHealth,
+                data.dirtLevel,
+                data.locked and 1 or 0,
+                W2F_GARAGE.VehicleStates.STORED,
+                garageId,
+                plate
+            }
+        ) or 0) > 0
+    end
+
+    local slot = Database._memorySlots[plate]
+
+    if slot then
+        slot.model = data.model or slot.model
+        slot.vehicle_props = data.props or slot.vehicle_props
+        slot.fuel = data.fuel or slot.fuel
+        slot.engine_health = data.engineHealth or slot.engine_health
+        slot.body_health = data.bodyHealth or slot.body_health
+        slot.dirt_level = data.dirtLevel or slot.dirt_level
+        slot.state = W2F_GARAGE.VehicleStates.STORED
+        return true
+    end
+
+    return false
+end
+
+function Database.UpdateGarageSlotIndex(garageId, plate, slotIndex, floorIndex)
+    plate = ServerUtils.NormalizePlate(plate)
+
+    if Database.UsePropertyPersistence() then
+        local tables = propertyTables()
+        return (MySQL.update.await(
+            ('UPDATE `%s` SET `slot_index` = ?, `floor_index` = ? WHERE `garage_id` = ? AND `plate` = ?'):format(tables.slots),
+            { slotIndex, floorIndex or 1, garageId, plate }
+        ) or 0) > 0
+    end
+
+    local slot = Database._memorySlots[plate]
+
+    if slot then
+        slot.slot_index = slotIndex
+        slot.floor_index = floorIndex or slot.floor_index
+        return true
+    end
+
+    return false
+end
+
+function Database.UpdateGarageSlotFloor(garageId, plate, floorIndex)
+    local slot = Database.GetGarageSlot(garageId, plate)
+
+    if not slot then
+        return false
+    end
+
+    return Database.UpdateGarageSlotIndex(garageId, plate, slot.slot_index, floorIndex)
+end
+
+function Database.SwapGarageSlots(garageId, plateA, plateB)
+    local slotA = Database.GetGarageSlot(garageId, plateA)
+    local slotB = Database.GetGarageSlot(garageId, plateB)
+
+    if not slotA or not slotB then
+        return false
+    end
+
+    Database.UpdateGarageSlotIndex(garageId, plateA, slotB.slot_index, slotB.floor_index)
+    Database.UpdateGarageSlotIndex(garageId, plateB, slotA.slot_index, slotA.floor_index)
+    return true
+end
+
+function Database.UpdateGarageSlotTimestamps(garageId, plate, flags)
+    if not Database.UsePropertyPersistence() then
+        return true
+    end
+
+    local tables = propertyTables()
+    local sets = {}
+
+    if flags.lastStoredAt then
+        sets[#sets + 1] = '`last_stored_at` = CURRENT_TIMESTAMP'
+    end
+
+    if flags.lastSpawnedAt then
+        sets[#sets + 1] = '`last_spawned_at` = CURRENT_TIMESTAMP'
+    end
+
+    if #sets == 0 then
+        return true
+    end
+
+    MySQL.update.await(
+        ('UPDATE `%s` SET %s WHERE `garage_id` = ? AND `plate` = ?'):format(tables.slots, table.concat(sets, ', ')),
+        { garageId, plate }
+    )
 
     return true
 end

@@ -50,6 +50,10 @@ function ServerUtils.GetGarage(garageId)
         return nil
     end
 
+    if PropertyGarages and PropertyGarages.Get(garageId) then
+        return PropertyGarages.Enrich(garageId)
+    end
+
     return Garages and Garages.Get and Garages.Get(garageId) or nil
 end
 

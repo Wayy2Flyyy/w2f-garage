@@ -23,7 +23,19 @@ function ClientUtils.Notify(message, notifyType, duration)
 end
 
 function ClientUtils.GetGarage(garageId)
+    if PropertyGarages and PropertyGarages.Get(garageId) then
+        return PropertyGarages.Enrich(garageId)
+    end
+
     return Garages and Garages.Get and Garages.Get(garageId) or nil
+end
+
+function ClientUtils.GetVehiclePlate(vehicle)
+    if not vehicle or vehicle == 0 then
+        return nil
+    end
+
+    return ClientUtils.NormalizePlate(GetVehicleNumberPlateText(vehicle) or '')
 end
 
 function ClientUtils.ToPlainTable(value)
@@ -91,8 +103,10 @@ function ClientUtils.ApplyVehicleProperties(vehicle, properties)
         return false
     end
 
-    if lib and lib.setVehicleProperties and properties.props then
-        lib.setVehicleProperties(vehicle, properties.props)
+    local props = properties.props or properties
+
+    if lib and lib.setVehicleProperties and type(props) == 'table' then
+        lib.setVehicleProperties(vehicle, props)
     end
 
     if properties.fuel then

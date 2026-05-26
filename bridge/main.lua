@@ -63,6 +63,10 @@ function Bridge.DetectFramework()
     return 'none'
 end
 
+Bridge.Init = function()
+    return Bridge.Initialize()
+end
+
 function Bridge.Initialize()
     if Bridge.Initialized then
         return Bridge.ActiveFramework, Bridge.ActiveAdapter

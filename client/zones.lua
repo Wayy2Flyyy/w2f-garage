@@ -66,6 +66,42 @@ function Zones.CreateStoreZone(garage, zoneConfig)
     })
 end
 
+function Zones.InitProperty()
+    if not Config.Property or not Config.Property.Enabled then
+        return false
+    end
+
+    if Config.Target.UseTarget and GetResourceState(Config.Target.Resource) == 'started' and not Config.Target.FallbackZones then
+        return true
+    end
+
+    if not lib or not lib.zones then
+        return false
+    end
+
+    for garageId, garage in pairs(PropertyGarages.GetAll()) do
+        local coords = garage.exteriorEntryCoords
+
+        if coords and not PropertyGarages.IsTodoCoords(coords) then
+            local pseudoGarage = {
+                id = garageId,
+                label = garage.label,
+                coords = coords,
+                radius = Config.Target.InteractionDistance
+            }
+
+            addZone(Zones.CreateGarageZone({
+                id = garageId,
+                label = garage.label,
+                coords = coords,
+                radius = Config.Target.InteractionDistance
+            }))
+        end
+    end
+
+    return true
+end
+
 function Zones.Init()
     if Config.Target.UseTarget and GetResourceState(Config.Target.Resource) == 'started' and not Config.Target.FallbackZones then
         ClientUtils.Debug('Skipping fallback zones because target interactions are active.')

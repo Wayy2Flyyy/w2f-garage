@@ -39,8 +39,11 @@ function Client.Start()
     Client.Started = true
     Nui.RegisterCallbacks()
     createBlips()
+    ClientProperty.InitBlips()
     Targets.Init()
+    Targets.InitProperty()
     Zones.Init()
+    Zones.InitProperty()
 
     ClientUtils.Debug('w2f-garage client foundation started.', {
         garages = Garages and Garages.List and ClientUtils.ToPlainTable(Garages.List) or {},
@@ -59,6 +62,7 @@ function Client.Stop()
     Zones.Destroy()
     Camera.Destroy()
     removeBlips()
+    ClientProperty.DestroyBlips()
 end
 
 CreateThread(function()

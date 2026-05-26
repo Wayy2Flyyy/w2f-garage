@@ -100,7 +100,52 @@ function Nui.RegisterCallbacks()
     nuiCallback('payImpound', function(data)
         return lib.callback.await(W2F_GARAGE.Callbacks.PayImpound, false, data)
     end)
+
+    nuiCallback('getPropertyDashboard', function()
+        return lib.callback.await(W2F_GARAGE.Callbacks.GetPropertyDashboard, false)
+    end)
+
+    nuiCallback('buyGarage', function(data)
+        return lib.callback.await(W2F_GARAGE.Callbacks.BuyGarage, false, data.garageId)
+    end)
+
+    nuiCallback('sellGarage', function(data)
+        return lib.callback.await(W2F_GARAGE.Callbacks.SellGarage, false, data.garageId)
+    end)
+
+    nuiCallback('enterGarage', function(data)
+        local result = lib.callback.await(W2F_GARAGE.Callbacks.EnterGarage, false, data)
+
+        if result and result.success then
+            SetNuiFocus(false, false)
+            Nui.Open = false
+        end
+
+        return result
+    end)
+
+    nuiCallback('exitGarage', function(data)
+        return lib.callback.await(W2F_GARAGE.Callbacks.ExitGarage, false, data.garageId)
+    end)
+
+    nuiCallback('getGarageVehicles', function(data)
+        return lib.callback.await(W2F_GARAGE.Callbacks.GetGarageVehicles, false, data)
+    end)
+
+    nuiCallback('moveVehicleSlot', function(data)
+        return lib.callback.await(W2F_GARAGE.Callbacks.MoveVehicleSlot, false, data)
+    end)
+
+    nuiCallback('propertySpawnVehicle', function(data)
+        SetNuiFocus(false, false)
+        Nui.Open = false
+        return lib.callback.await(W2F_GARAGE.Callbacks.PropertySpawnVehicle, false, data)
+    end)
 end
+
+RegisterNetEvent('w2f-garage:client:openPropertyGarage', function(garageId)
+    ClientProperty.OpenDashboard(garageId)
+end)
 
 RegisterNetEvent(W2F_GARAGE.Events.OpenGarage, function(garageId)
     Nui.OpenGarage(garageId)
