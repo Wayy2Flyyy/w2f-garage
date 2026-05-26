@@ -15,6 +15,7 @@ type PropertyGarage = {
   usedSlots?: number
   freeSlots?: number
   productionReady?: boolean
+  interiorEnterReady?: boolean
   interiorTemplate?: string
   floors?: number
 }
@@ -102,7 +103,7 @@ export function PropertyGarageDashboard({ dashboard, selectedGarageId, onSelectG
                   {selected.location} · {selected.area}
                 </p>
               </div>
-              <StatusBadge state={selected.productionReady ? 'stored' : 'unknown'} />
+              <StatusBadge state={selected.productionReady ? 'stored' : selected.interiorEnterReady ? 'out' : 'unknown'} />
             </header>
 
             <div className="property-stats">
@@ -140,7 +141,9 @@ export function PropertyGarageDashboard({ dashboard, selectedGarageId, onSelectG
 
             {!selected.productionReady && (
               <div className="property-warning">
-                Coordinates pending (TODO_COORDS). Purchase and UI work; drive-in interior requires exact coords.
+                {selected.interiorEnterReady
+                  ? 'Shared interior base is active. Store, spawn, and slot positions still need TODO_CAPTURE.'
+                  : 'Coordinates pending (TODO_CAPTURE). Purchase works; interior entry needs a base or captured coords.'}
               </div>
             )}
 
@@ -149,7 +152,7 @@ export function PropertyGarageDashboard({ dashboard, selectedGarageId, onSelectG
                 <>
                   <button
                     type="button"
-                    disabled={busy || !selected.productionReady}
+                    disabled={busy || !selected.interiorEnterReady}
                     onClick={() => run('enterGarage', { garageId: selected.id, floorIndex: 1 })}
                   >
                     Enter Garage

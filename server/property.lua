@@ -211,10 +211,6 @@ function Property.SpawnVehicle(source, garageId, plate, floorIndex)
         return ServerUtils.Failure(reason, Locale.access_denied)
     end
 
-    if Config.Property.RequireProductionCoords and not PropertyGarages.IsProductionReady(garageId) then
-        return ServerUtils.Failure('coords_not_ready', Locale.coords_not_ready)
-    end
-
     local slot = Database.GetGarageSlot(garageId, plate)
 
     if not slot or slot.owner_identifier ~= identifier then

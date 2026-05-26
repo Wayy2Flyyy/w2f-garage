@@ -39,6 +39,6 @@ Production-oriented FiveM property garage framework for **QBCore**, **Qbox**, an
 - [docs/EXPORTS.md](docs/EXPORTS.md)
 - [docs/MIGRATION.md](docs/MIGRATION.md)
 
-## TODO_COORDS
+## TODO_CAPTURE
 
-Most property garages ship with exact **entry** coords only. Store, spawn, interior entry/exit, and slot positions use `TODO_COORDS` until mapped. The resource starts safely; full drive-in interiors require completing coordinates per [docs/PROPERTY_GARAGES.md](docs/PROPERTY_GARAGES.md).
+Property garages ship with exact **exterior entry** coords and tier **interior base** coords (shared shells). Store, spawn, per-garage interior offsets, and vehicle slot vec4s use `TODO_CAPTURE` until mapped. Players can enter the shared interior at the base while capture is in progress. See [docs/PROPERTY_GARAGES.md](docs/PROPERTY_GARAGES.md).
