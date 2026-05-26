@@ -13,6 +13,10 @@ type OpenPayload = {
   }
 }
 
+function isGarage(payload: Record<string, Garage> | Garage): payload is Garage {
+  return typeof (payload as Garage).id === 'string'
+}
+
 export default function App() {
   const [visible, setVisible] = useState(!isFiveM())
   const [garages, setGarages] = useState<Record<string, Garage>>(mockGarages)
@@ -59,10 +63,18 @@ export default function App() {
     }, [])
   )
 
-  useNuiEvent<Record<string, Garage>>(
+  useNuiEvent<Record<string, Garage> | Garage>(
     'setGarageData',
     useCallback((payload) => {
       if (payload && Object.keys(payload).length > 0) {
+        if (isGarage(payload)) {
+          setGarages((current) => ({
+            ...current,
+            [payload.id]: payload
+          }))
+          return
+        }
+
         setGarages(payload)
       }
     }, [])
