@@ -14,9 +14,18 @@
 ## Coordinate policy
 
 - **Confirmed:** `exteriorEntryCoords` (blip / interaction)
-- **Pending:** marked `TODO_COORDS` or `TODO_COORDS_VEC4` until exact positions are supplied
+- **Template interior:** `interiorBaseCoords` per tier (shared GTA Online garage shell)
+- **Pending capture:** `TODO_CAPTURE` / `TODO_CAPTURE_VEC4` for store, spawn, entry/exit offsets, and slot vec4s
 
-A garage is **production-ready** only when `PropertyGarages.IsProductionReady(garageId)` returns true (all required coords + slot layout filled).
+| Tier | `interiorBaseCoords` |
+|------|----------------------|
+| low-end | `vec3(173.2903, -1003.6000, -99.6571)` |
+| medium | `vec3(197.8153, -1002.2930, -99.6575)` |
+| high-end | `vec3(229.9559, -981.7928, -99.6607)` |
+
+`PropertyGarages.CanEnterInterior(garageId)` is true when `interiorBaseCoords` or captured `interiorEntryCoords` exist.
+
+**Production-ready** (`PropertyGarages.IsProductionReady`) requires all capture fields and full slot layout — not just the shared base.
 
 ## Lifecycle (server-authoritative)
 

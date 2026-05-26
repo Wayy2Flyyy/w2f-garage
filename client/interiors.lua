@@ -134,7 +134,8 @@ RegisterNetEvent(W2F_GARAGE.Events.PropertyEnter, function(payload)
     ClientProperty.CurrentFloor = payload.floorIndex or 1
 
     local property = PropertyGarages.Get(payload.garageId)
-    local entry = property and parseCoords(property.interiorEntryCoords)
+    local entry = parseCoords(payload.interiorEnterCoords)
+        or (property and parseCoords(PropertyGarages.GetInteriorEnterCoords(property)))
 
     if entry then
         local ped = PlayerPedId()
@@ -142,6 +143,10 @@ RegisterNetEvent(W2F_GARAGE.Events.PropertyEnter, function(payload)
 
         if entry.w then
             SetEntityHeading(ped, entry.w)
+        end
+
+        if not payload.productionReady then
+            ClientUtils.Notify(Locale.interior_base_enter, 'inform')
         end
     else
         ClientUtils.Notify(Locale.interior_coords_pending, 'inform')

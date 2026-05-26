@@ -29,8 +29,8 @@ function ServerInteriors.CanEnterInterior(garageId)
         return false, 'interior_disabled'
     end
 
-    if Config.Property.RequireProductionCoords and not PropertyGarages.IsProductionReady(garageId) then
-        return false, 'coords_not_ready'
+    if not PropertyGarages.CanEnterInterior(garageId) then
+        return false, 'interior_not_ready'
     end
 
     return true
@@ -61,13 +61,17 @@ function ServerInteriors.Enter(source, garageId, ownerIdentifier, floorIndex)
         enteredAt = os.time()
     }
 
+    local property = PropertyGarages.Get(garageId)
+
     TriggerClientEvent(W2F_GARAGE.Events.PropertyEnter, source, {
         garageId = garageId,
         floorIndex = floorIndex,
         bucket = bucket,
         interiorTemplate = template and template.id or nil,
+        interiorEnterCoords = PropertyGarages.GetInteriorEnterCoords(property),
         vehicles = vehicles,
-        coordsReady = PropertyGarages.IsProductionReady(garageId)
+        productionReady = PropertyGarages.IsProductionReady(garageId),
+        interiorEnterReady = PropertyGarages.CanEnterInterior(garageId)
     })
 
     Logs.GarageAction(W2F_GARAGE.LogActions.GARAGE_ENTER, source, nil, garageId, {
