@@ -32,6 +32,7 @@ server_scripts {
     'bridge/inventory.lua',
     'bridge/fuel.lua',
     'bridge/keys.lua',
+    'bridge/billing.lua',
     'bridge/notify.lua',
     'server/utils.lua',
     'server/logs.lua',

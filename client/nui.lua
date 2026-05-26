@@ -151,6 +151,12 @@ function Nui.RegisterCallbacks()
     nuiCallback('refreshPublicGarage', function(data)
         return lib.callback.await(W2F_GARAGE.Callbacks.GetPublicVehicles, false, data.garageId or Nui.CurrentGarage)
     end)
+    nuiCallback('getPublicGarageBills', function()
+        return lib.callback.await(W2F_GARAGE.Callbacks.GetPublicGarageBills, false)
+    end)
+    nuiCallback('openBillingApp', function()
+        return lib.callback.await(W2F_GARAGE.Callbacks.OpenBillingApp, false)
+    end)
 
     nuiCallback('storeVehicle', function(data)
         local garageId = data.garageId or Nui.CurrentGarage

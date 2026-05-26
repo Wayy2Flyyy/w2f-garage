@@ -67,6 +67,9 @@ Locales.en = {
     public_wrong_garage = 'Collect this vehicle from the garage where it was stored.',
     public_fee_paid = 'Paid $%s storage fees.',
     public_manual_payment_required = 'Pay storage fees manually before spawning this vehicle.',
+    public_unpaid_fee_banking = 'You have unpaid garage fees. Pay them through your banking app before collecting this vehicle.',
+    public_spawn_blocked_fee = 'Outstanding garage fee must be paid first.',
+    public_pay_in_banking_app = 'Pay the pending garage bill through your bank/phone app.',
     vehicle_ownership_not_configured = 'Vehicle ownership database is not configured.',
     invalid_vehicle_state = 'Vehicle is not in a valid state for this action.'
 }

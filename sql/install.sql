@@ -214,6 +214,7 @@ CREATE TABLE IF NOT EXISTS `w2f_public_garage_vehicles` (
     `unpaid_fee` INT UNSIGNED NOT NULL DEFAULT 0,
     `daily_fee` INT UNSIGNED NOT NULL DEFAULT 700,
     `paid_until` BIGINT UNSIGNED NULL DEFAULT NULL,
+    `current_bill_id` BIGINT UNSIGNED NULL DEFAULT NULL,
     `last_spawned_at` BIGINT UNSIGNED NULL DEFAULT NULL,
     `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -221,6 +222,29 @@ CREATE TABLE IF NOT EXISTS `w2f_public_garage_vehicles` (
     KEY `idx_w2f_public_owner` (`owner_identifier`),
     KEY `idx_w2f_public_garage` (`garage_id`),
     KEY `idx_w2f_public_state` (`state`)
+);
+
+CREATE TABLE IF NOT EXISTS `w2f_public_garage_bills` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `owner_identifier` VARCHAR(96) NOT NULL,
+    `plate` VARCHAR(16) NOT NULL,
+    `garage_id` VARCHAR(64) NOT NULL,
+    `bill_type` VARCHAR(32) NOT NULL DEFAULT 'storage',
+    `amount` INT UNSIGNED NOT NULL DEFAULT 0,
+    `daily_fee` INT UNSIGNED NOT NULL DEFAULT 700,
+    `billable_days` INT UNSIGNED NOT NULL DEFAULT 0,
+    `billing_anchor` BIGINT UNSIGNED NOT NULL,
+    `paid_until` BIGINT UNSIGNED NULL DEFAULT NULL,
+    `status` VARCHAR(16) NOT NULL DEFAULT 'pending',
+    `provider` VARCHAR(32) NOT NULL DEFAULT 'internal',
+    `provider_bill_id` VARCHAR(96) NULL,
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `paid_at` TIMESTAMP NULL DEFAULT NULL,
+    PRIMARY KEY (`id`),
+    KEY `idx_w2f_public_bills_owner` (`owner_identifier`),
+    KEY `idx_w2f_public_bills_plate` (`plate`),
+    KEY `idx_w2f_public_bills_status` (`status`)
 );
 
 CREATE TABLE IF NOT EXISTS `w2f_garage_favourites` (
