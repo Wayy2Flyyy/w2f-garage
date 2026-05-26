@@ -44,8 +44,16 @@ client_scripts {
     'bridge/main.lua',
     'bridge/fuel.lua',
     'bridge/keys.lua',
-    'bridge/notify.lua'
+    'bridge/notify.lua',
+    'client/utils.lua',
+    'client/camera.lua',
+    'client/spawn.lua',
+    'client/store.lua',
+    'client/nui.lua',
+    'client/zones.lua',
+    'client/targets.lua',
+    'client/main.lua'
 }
 
--- Client and NUI runtime entries are added as their foundation stages are implemented.
+-- NUI runtime entries are added once the React/Vite baseline is built.
 -- SQL migrations are intentionally not run from the manifest.
