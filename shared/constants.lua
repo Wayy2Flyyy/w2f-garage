@@ -103,7 +103,8 @@ W2F_GARAGE.LogActions = {
     SLOT_MOVED = 'slot_moved',
     PUBLIC_STORED = 'public_vehicle_stored',
     PUBLIC_SPAWNED = 'public_vehicle_spawned',
-    PUBLIC_FEE_PAID = 'public_storage_fee_paid'
+    PUBLIC_FEE_PAID = 'public_storage_fee_paid',
+    PUBLIC_FEE_PAYMENT_FAILED = 'public_storage_fee_payment_failed'
 }
 
 W2F_GARAGE.ValidFrameworks = {

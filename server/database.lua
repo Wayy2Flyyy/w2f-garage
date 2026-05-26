@@ -1,5 +1,65 @@
 Database = Database or {}
 
+
+function Database.ApplyPreset()
+    if not Config or not Config.Database then
+        return false
+    end
+
+    local presetName = Config.Database.Preset or 'auto'
+
+    if presetName == 'custom' then
+        if Config.Debug then
+            ServerUtils.Debug('Database preset is custom; preserving manual mappings.')
+        end
+        return true
+    end
+
+    if presetName == 'auto' then
+        local framework = Bridge and Bridge.ActiveFramework or 'none'
+        if framework == 'qbox' then
+            presetName = 'qbox'
+        elseif framework == 'qbcore' then
+            presetName = 'qbcore'
+        elseif framework == 'esx' then
+            presetName = 'esx'
+        else
+            if Config.Debug then
+                ServerUtils.Debug('Database preset auto-detect failed; no framework preset applied.', { framework = framework })
+            end
+            return false
+        end
+    end
+
+    local preset = Config.Database.Presets and Config.Database.Presets[presetName]
+    if not preset then
+        if Config.Debug then
+            ServerUtils.Debug('Database preset not found.', { preset = presetName })
+        end
+        return false
+    end
+
+    Config.Database.ExistingVehicleTable = preset.table
+    Config.Database.Columns = Config.Database.Columns or {}
+    Config.Database.Columns.owner = preset.owner
+    Config.Database.Columns.plate = preset.plate
+    Config.Database.Columns.vehicle = preset.vehicle
+    Config.Database.Columns.properties = preset.properties
+    Config.Database.Columns.garage = preset.garage
+    Config.Database.Columns.state = preset.state
+    Config.Database.Columns.fuel = preset.fuel
+    Config.Database.Columns.engine = preset.engine
+    Config.Database.Columns.body = preset.body
+
+    if Config.Debug then
+        ServerUtils.Debug('Applied database preset.', { preset = presetName, table = preset.table })
+    end
+
+    return true
+end
+
+Database.ApplyPreset()
+
 local function enabled()
     return Config.Database and Config.Database.Enabled == true
 end
@@ -741,8 +801,8 @@ function Database.UpsertPublicVehicle(entry)
     if Database.UsePublicPersistence() then
         MySQL.insert.await(
             ([[INSERT INTO `%s`
-                (`plate`, `owner_identifier`, `garage_id`, `garage_type`, `model`, `vehicle_props`, `fuel`, `engine_health`, `body_health`, `dirt_level`, `state`, `stored_at`, `last_fee_calculated_at`, `unpaid_fee`, `daily_fee`)
-              VALUES (?, ?, ?, 'public', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (`plate`, `owner_identifier`, `garage_id`, `garage_type`, `model`, `vehicle_props`, `fuel`, `engine_health`, `body_health`, `dirt_level`, `state`, `stored_at`, `last_fee_calculated_at`, `unpaid_fee`, `daily_fee`, `paid_until`)
+              VALUES (?, ?, ?, 'public', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
               ON DUPLICATE KEY UPDATE
                 `owner_identifier` = VALUES(`owner_identifier`),
                 `garage_id` = VALUES(`garage_id`),
@@ -756,7 +816,8 @@ function Database.UpsertPublicVehicle(entry)
                 `stored_at` = VALUES(`stored_at`),
                 `last_fee_calculated_at` = VALUES(`last_fee_calculated_at`),
                 `unpaid_fee` = VALUES(`unpaid_fee`),
-                `daily_fee` = VALUES(`daily_fee`)]]):format(publicTable()),
+                `daily_fee` = VALUES(`daily_fee`),
+                `paid_until` = VALUES(`paid_until`)]]):format(publicTable()),
             {
                 entry.plate,
                 entry.ownerIdentifier,
@@ -771,7 +832,8 @@ function Database.UpsertPublicVehicle(entry)
                 entry.storedAt or now,
                 entry.lastFeeCalculatedAt or now,
                 entry.unpaidFee or 0,
-                entry.dailyFee or 700
+                entry.dailyFee or 700,
+                entry.paidUntil
             }
         )
 
@@ -794,6 +856,7 @@ function Database.UpsertPublicVehicle(entry)
         last_fee_calculated_at = entry.lastFeeCalculatedAt or now,
         unpaid_fee = entry.unpaidFee or 0,
         daily_fee = entry.dailyFee or 700,
+        paid_until = entry.paidUntil,
         last_spawned_at = entry.lastSpawnedAt
     }
 
@@ -816,6 +879,11 @@ function Database.UpdatePublicVehicleState(plate, state, extra)
         if extra.lastFeeCalculatedAt then
             querySets[#querySets + 1] = '`last_fee_calculated_at` = ?'
             params[#params + 1] = extra.lastFeeCalculatedAt
+        end
+
+        if extra.paidUntil then
+            querySets[#querySets + 1] = '`paid_until` = ?'
+            params[#params + 1] = extra.paidUntil
         end
 
         if extra.lastSpawnedAt then
@@ -852,6 +920,10 @@ function Database.UpdatePublicVehicleState(plate, state, extra)
         row.last_fee_calculated_at = extra.lastFeeCalculatedAt
     end
 
+    if extra.paidUntil then
+        row.paid_until = extra.paidUntil
+    end
+
     if extra.lastSpawnedAt then
         row.last_spawned_at = extra.lastSpawnedAt
     end
@@ -859,14 +931,14 @@ function Database.UpdatePublicVehicleState(plate, state, extra)
     return true
 end
 
-function Database.SetPublicUnpaidFee(plate, fee, lastCalculatedAt)
+function Database.SetPublicUnpaidFee(plate, fee, lastCalculatedAt, paidUntil)
     plate = ServerUtils.NormalizePlate(plate)
     lastCalculatedAt = lastCalculatedAt or os.time()
 
     if Database.UsePublicPersistence() then
         return (MySQL.update.await(
-            ('UPDATE `%s` SET `unpaid_fee` = ?, `last_fee_calculated_at` = ? WHERE `plate` = ?'):format(publicTable()),
-            { fee, lastCalculatedAt, plate }
+            ('UPDATE `%s` SET `unpaid_fee` = ?, `last_fee_calculated_at` = ?, `paid_until` = COALESCE(?, `paid_until`) WHERE `plate` = ?'):format(publicTable()),
+            { fee, lastCalculatedAt, paidUntil, plate }
         ) or 0) > 0
     end
 
@@ -875,6 +947,9 @@ function Database.SetPublicUnpaidFee(plate, fee, lastCalculatedAt)
     if row then
         row.unpaid_fee = fee
         row.last_fee_calculated_at = lastCalculatedAt
+        if paidUntil then
+            row.paid_until = paidUntil
+        end
         return true
     end
 

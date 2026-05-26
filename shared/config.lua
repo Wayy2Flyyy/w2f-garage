@@ -19,6 +19,59 @@ Config.Target = {
 
 Config.Database = {
     Enabled = false,
+
+    Preset = 'auto',
+    Presets = {
+        qbox = {
+            table = 'player_vehicles',
+            owner = 'citizenid',
+            plate = 'plate',
+            vehicle = 'vehicle',
+            properties = 'mods',
+            garage = 'garage',
+            state = 'state',
+            fuel = 'fuel',
+            engine = 'engine',
+            body = 'body'
+        },
+        qbcore = {
+            table = 'player_vehicles',
+            owner = 'citizenid',
+            plate = 'plate',
+            vehicle = 'vehicle',
+            properties = 'mods',
+            garage = 'garage',
+            state = 'state',
+            fuel = 'fuel',
+            engine = 'engine',
+            body = 'body'
+        },
+        esx = {
+            table = 'owned_vehicles',
+            owner = 'owner',
+            plate = 'plate',
+            vehicle = 'vehicle',
+            properties = 'vehicle',
+            garage = 'garage',
+            state = 'stored',
+            fuel = nil,
+            engine = nil,
+            body = nil
+        },
+        custom = {
+            table = nil,
+            owner = nil,
+            plate = nil,
+            vehicle = nil,
+            properties = nil,
+            garage = nil,
+            state = nil,
+            fuel = nil,
+            engine = nil,
+            body = nil
+        }
+    },
+
     AutoMigrate = false,
     SafeMode = true,
     ExistingVehicleTable = nil,
