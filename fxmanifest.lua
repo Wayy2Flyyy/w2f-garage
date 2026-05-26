@@ -21,5 +21,23 @@ shared_scripts {
     'shared/vehicles.lua'
 }
 
--- Bridge, server, client, and NUI entries are added as their foundation stages are implemented.
+server_scripts {
+    'bridge/main.lua',
+    'bridge/qbcore.lua',
+    'bridge/qbox.lua',
+    'bridge/esx.lua',
+    'bridge/inventory.lua',
+    'bridge/fuel.lua',
+    'bridge/keys.lua',
+    'bridge/notify.lua'
+}
+
+client_scripts {
+    'bridge/main.lua',
+    'bridge/fuel.lua',
+    'bridge/keys.lua',
+    'bridge/notify.lua'
+}
+
+-- Server, client, and NUI runtime entries are added as their foundation stages are implemented.
 -- SQL migrations are intentionally not run from the manifest.
