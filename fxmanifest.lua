@@ -29,7 +29,15 @@ server_scripts {
     'bridge/inventory.lua',
     'bridge/fuel.lua',
     'bridge/keys.lua',
-    'bridge/notify.lua'
+    'bridge/notify.lua',
+    'server/utils.lua',
+    'server/logs.lua',
+    'server/database.lua',
+    'server/security.lua',
+    'server/vehicleState.lua',
+    'server/callbacks.lua',
+    'server/admin.lua',
+    'server/main.lua'
 }
 
 client_scripts {
@@ -39,5 +47,5 @@ client_scripts {
     'bridge/notify.lua'
 }
 
--- Server, client, and NUI runtime entries are added as their foundation stages are implemented.
+-- Client and NUI runtime entries are added as their foundation stages are implemented.
 -- SQL migrations are intentionally not run from the manifest.
