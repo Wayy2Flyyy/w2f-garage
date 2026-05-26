@@ -141,15 +141,34 @@ function Nui.RegisterCallbacks()
     end)
 
     nuiCallback('payPublicFee', function(data)
-        return lib.callback.await(W2F_GARAGE.Callbacks.PayPublicStorageFee, false, data)
+        local result = lib.callback.await(W2F_GARAGE.Callbacks.PayPublicStorageFee, false, data)
+        if result and result.success then
+            result.data = lib.callback.await(W2F_GARAGE.Callbacks.GetPublicVehicles, false, (data and data.garageId) or Nui.CurrentGarage).data
+        end
+        return result
     end)
 
     nuiCallback('refreshPublicGarage', function(data)
         return lib.callback.await(W2F_GARAGE.Callbacks.GetPublicVehicles, false, data.garageId or Nui.CurrentGarage)
     end)
+    nuiCallback('getPublicGarageBills', function()
+        return lib.callback.await(W2F_GARAGE.Callbacks.GetPublicGarageBills, false)
+    end)
+    nuiCallback('openBillingApp', function()
+        return lib.callback.await(W2F_GARAGE.Callbacks.OpenBillingApp, false)
+    end)
 
     nuiCallback('storeVehicle', function(data)
-        return Store.RequestVehicle(data.garageId or Nui.CurrentGarage)
+        local garageId = data.garageId or Nui.CurrentGarage
+        if Nui.CurrentMode == 'public' or BasicPublicGarages.Get(garageId) then
+            local result = ClientPublicGarage.Store(garageId)
+            if result and result.success then
+                result.data = lib.callback.await(W2F_GARAGE.Callbacks.GetPublicVehicles, false, garageId).data
+            end
+            return result
+        end
+
+        return Store.RequestVehicle(garageId)
     end)
 
     nuiCallback('recoverVehicle', function(data)

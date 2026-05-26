@@ -46,6 +46,7 @@ function Client.Start()
     Targets.InitPublic()
     Zones.Init()
     Zones.InitProperty()
+    Zones.InitPublic()
 
     ClientUtils.Debug('w2f-garage client foundation started.', {
         garages = Garages and Garages.List and ClientUtils.ToPlainTable(Garages.List) or {},

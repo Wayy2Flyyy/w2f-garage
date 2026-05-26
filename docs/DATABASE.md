@@ -53,3 +53,5 @@ Until mappings are configured, vehicle-loading callbacks may return safe empty d
 - `SaveVehicleHistory`
 
 Raw SQL should not appear in client files or normal server logic.
+
+- Public garage table now includes `paid_until` (BIGINT UNSIGNED NULL) to anchor billing after manual fee payments.

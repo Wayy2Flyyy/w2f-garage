@@ -1,5 +1,6 @@
 local function startup()
     Bridge.Init()
+    Database.ApplyPreset()
     Callbacks.Register()
     Admin.RegisterCommands()
     VehicleState.RestartRecovery()
@@ -110,4 +111,30 @@ end)
 
 exports('GetPublicGarageVehicles', function(source, garageId)
     return PublicGarage.GetVehicles(source, garageId)
+end)
+
+RegisterNetEvent('w2f-garage:server:createPublicGarageBill', function(data)
+    data = data or {}
+    local record = Database.GetPublicVehicle(data.plate)
+    if record and record.owner_identifier == Bridge.GetIdentifier(source) then
+        PublicGarage.EnsureBill(source, record, data.garageId or record.garage_id)
+    end
+end)
+
+RegisterNetEvent('w2f-garage:server:getPublicGarageBills', function()
+    TriggerClientEvent('w2f-garage:client:publicGarageBills', source, Billing.GetOutstandingBills(source))
+end)
+
+RegisterNetEvent('w2f-garage:server:refreshPublicGarageBill', function(data)
+    data = data or {}
+    PublicGarage.RefreshBill(source, data.plate)
+end)
+
+RegisterNetEvent('w2f-garage:server:markPublicGarageBillPaid', function(data)
+    data = data or {}
+    PublicGarage.MarkBillPaid(source, data.plate)
+end)
+
+RegisterNetEvent('w2f-garage:server:openBillingApp', function()
+    Billing.OpenBillingApp(source)
 end)

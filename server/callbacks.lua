@@ -317,6 +317,20 @@ function Callbacks.Register()
         data = data or {}
         return PublicGarage.PayStorageFee(source, data.garageId, data.plate)
     end)
+    register(W2F_GARAGE.Callbacks.GetPublicGarageBills, function(source)
+        return PublicGarage.GetBills(source)
+    end)
+    register(W2F_GARAGE.Callbacks.GetOutstandingPublicGarageFee, function(source, data)
+        data = data or {}
+        return PublicGarage.RefreshBill(source, data.plate)
+    end)
+    register(W2F_GARAGE.Callbacks.OpenBillingApp, function(source)
+        return Billing.OpenBillingApp(source)
+    end)
+    register(W2F_GARAGE.Callbacks.RefreshPublicGarageBillStatus, function(source, data)
+        data = data or {}
+        return PublicGarage.RefreshBill(source, data.plate)
+    end)
 
     Callbacks.Registered = true
     return true

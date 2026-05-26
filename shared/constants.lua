@@ -81,6 +81,10 @@ W2F_GARAGE.Callbacks = {
     StorePublicVehicle = 'w2f-garage:server:storePublicVehicle',
     SpawnPublicVehicle = 'w2f-garage:server:spawnPublicVehicle',
     PayPublicStorageFee = 'w2f-garage:server:payPublicStorageFee'
+    ,GetPublicGarageBills = 'w2f-garage:server:getPublicGarageBills'
+    ,GetOutstandingPublicGarageFee = 'w2f-garage:server:getOutstandingPublicGarageFee'
+    ,OpenBillingApp = 'w2f-garage:server:openBillingApp'
+    ,RefreshPublicGarageBillStatus = 'w2f-garage:server:refreshPublicGarageBillStatus'
 }
 
 W2F_GARAGE.LogActions = {
@@ -103,7 +107,15 @@ W2F_GARAGE.LogActions = {
     SLOT_MOVED = 'slot_moved',
     PUBLIC_STORED = 'public_vehicle_stored',
     PUBLIC_SPAWNED = 'public_vehicle_spawned',
-    PUBLIC_FEE_PAID = 'public_storage_fee_paid'
+    PUBLIC_FEE_PAID = 'public_storage_fee_paid',
+    PUBLIC_FEE_PAYMENT_FAILED = 'public_storage_fee_payment_failed',
+    PUBLIC_BILL_CREATED = 'public_bill_created',
+    PUBLIC_BILL_UPDATED = 'public_bill_updated',
+    PUBLIC_BILL_PAID = 'public_bill_paid',
+    PUBLIC_BILL_CANCELLED = 'public_bill_cancelled',
+    PUBLIC_SPAWN_DENIED_UNPAID = 'public_spawn_denied_unpaid',
+    PUBLIC_BILLING_UNAVAILABLE = 'public_billing_provider_unavailable',
+    PUBLIC_BILLING_FALLBACK = 'public_billing_internal_fallback'
 }
 
 W2F_GARAGE.ValidFrameworks = {

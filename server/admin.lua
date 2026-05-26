@@ -255,6 +255,40 @@ function Admin.RegisterCommands()
         end)
     end, false)
 
+    RegisterCommand('garagebills', function(source, args)
+        guardedCommand(source, function()
+            local plate = ServerUtils.NormalizePlate(args[1] or '')
+            if plate and plate ~= '' then
+                local bill = Database.GetPendingPublicGarageBill(plate)
+                reply(source, bill and json.encode(bill) or ('No pending bill for %s.'):format(plate), bill and 'inform' or 'error')
+                return
+            end
+            local target = tonumber(args[2]) or source
+            local id = Bridge.GetIdentifier(target)
+            reply(source, json.encode(Database.GetPublicGarageBillsByOwner(id, 'pending') or {}), 'inform')
+        end)
+    end, false)
+
+    RegisterCommand('cleargaragebill', function(source, args)
+        guardedCommand(source, function()
+            local plate = ServerUtils.NormalizePlate(args[1])
+            if not plate then reply(source, 'Usage: /cleargaragebill <plate>', 'error') return end
+            PublicGarage.AdminClearFee(plate)
+            Logs.GarageAction(W2F_GARAGE.LogActions.PUBLIC_BILL_CANCELLED, source, plate, nil, { reason = 'admin_clear' })
+            reply(source, ('Cleared public bill for %s.'):format(plate), 'success')
+        end)
+    end, false)
+
+    RegisterCommand('markgaragebillpaid', function(source, args)
+        guardedCommand(source, function()
+            local plate = ServerUtils.NormalizePlate(args[1])
+            if not plate then reply(source, 'Usage: /markgaragebillpaid <plate>', 'error') return end
+            PublicGarage.MarkBillPaid(source, plate)
+            Logs.GarageAction(W2F_GARAGE.LogActions.PUBLIC_BILL_PAID, source, plate, nil, { reason = 'admin_mark' })
+            reply(source, ('Marked public bill as paid for %s.'):format(plate), 'success')
+        end)
+    end, false)
+
     Admin.Registered = true
     return true
 end

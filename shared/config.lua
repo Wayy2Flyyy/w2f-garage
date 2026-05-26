@@ -19,6 +19,59 @@ Config.Target = {
 
 Config.Database = {
     Enabled = false,
+
+    Preset = 'auto',
+    Presets = {
+        qbox = {
+            table = 'player_vehicles',
+            owner = 'citizenid',
+            plate = 'plate',
+            vehicle = 'vehicle',
+            properties = 'mods',
+            garage = 'garage',
+            state = 'state',
+            fuel = 'fuel',
+            engine = 'engine',
+            body = 'body'
+        },
+        qbcore = {
+            table = 'player_vehicles',
+            owner = 'citizenid',
+            plate = 'plate',
+            vehicle = 'vehicle',
+            properties = 'mods',
+            garage = 'garage',
+            state = 'state',
+            fuel = 'fuel',
+            engine = 'engine',
+            body = 'body'
+        },
+        esx = {
+            table = 'owned_vehicles',
+            owner = 'owner',
+            plate = 'plate',
+            vehicle = 'vehicle',
+            properties = 'vehicle',
+            garage = 'garage',
+            state = 'stored',
+            fuel = nil,
+            engine = nil,
+            body = nil
+        },
+        custom = {
+            table = nil,
+            owner = nil,
+            plate = nil,
+            vehicle = nil,
+            properties = nil,
+            garage = nil,
+            state = nil,
+            fuel = nil,
+            engine = nil,
+            body = nil
+        }
+    },
+
     AutoMigrate = false,
     SafeMode = true,
     ExistingVehicleTable = nil,
@@ -114,6 +167,7 @@ Config.Database.W2FTables.garageInteriors = 'w2f_garage_interiors'
 Config.Database.W2FTables.garageVehiclePositions = 'w2f_garage_vehicle_positions'
 Config.Database.W2FTables.purchaseLogs = 'w2f_garage_purchase_logs'
 Config.Database.W2FTables.publicGarageVehicles = 'w2f_public_garage_vehicles'
+Config.Database.W2FTables.publicGarageBills = 'w2f_public_garage_bills'
 
 Config.PublicGarages = {
     enabled = true,
@@ -123,11 +177,33 @@ Config.PublicGarages = {
     billingMode = 'realtime',
     realtimeDayHours = 24,
     requirePaymentBeforeSpawn = true,
-    autoChargeOnSpawn = true,
+    autoChargeOnSpawn = false,
+    useBillingSystem = true,
+    billingProvider = 'auto',
+    billAccount = 'bank',
+    billLabel = 'Public Garage Storage Fee',
+    billDescription = '$700/day public vehicle storage fee',
+    billDueOnSpawn = true,
+    allowSpawnWithUnpaidFees = false,
+    allowGarageUiPayment = false,
     allowNegativeBalance = false,
     chargeOnlyFullDays = true,
     useMenuOnly = true,
     paymentAccount = 'bank',
+}
+
+Config.BillingProviders = {
+    qbox = { enabled = true, resource = 'qbx_core', account = 'bank' },
+    lb_phone = {
+        enabled = true,
+        resource = 'lb-phone',
+        app = 'banking',
+        sendNotification = true,
+        notificationTitle = 'Garage Fee Due',
+        notificationMessage = 'You have an unpaid public garage storage fee.'
+    },
+    internal = { enabled = true },
+    custom = { enabled = false, createBillExport = nil, markPaidExport = nil, openAppEvent = nil }
 }
 
 Config.DebugCommands = {

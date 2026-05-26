@@ -135,3 +135,34 @@ function Zones.Destroy()
     Zones.Created = {}
     hideText()
 end
+
+
+function Zones.CreatePublicGarageZone(garageId, garage)
+    return lib and lib.zones and garage and garage.coords and lib.zones.sphere({
+        coords = garage.coords,
+        radius = garage.radius or Config.Target.InteractionDistance,
+        debug = Config.Debug,
+        onEnter = function() showText('[E] Open Public Garage') end,
+        onExit = function() hideText() end,
+        inside = function() if IsControlJustReleased(0, 38) then ClientPublicGarage.Open(garageId) end end
+    }) or nil
+end
+
+function Zones.CreatePublicStoreZone(garageId, garage)
+    if not (lib and lib.zones and garage and garage.storeCoords) then return nil end
+    return lib.zones.sphere({
+        coords = garage.storeCoords, radius = garage.storeRadius or Config.Target.InteractionDistance, debug = Config.Debug,
+        onEnter = function() showText('[E] Store Vehicle') end, onExit = function() hideText() end,
+        inside = function() if IsControlJustReleased(0, 38) then ClientPublicGarage.Store(garageId) end end
+    })
+end
+
+function Zones.InitPublic()
+    if Config.Target.UseTarget and GetResourceState(Config.Target.Resource) == 'started' and not Config.Target.FallbackZones then return true end
+    if not BasicPublicGarages.IsEnabled() or not lib or not lib.zones then return false end
+    for garageId, garage in pairs(BasicPublicGarages.GetAll()) do
+        addZone(Zones.CreatePublicGarageZone(garageId, garage))
+        addZone(Zones.CreatePublicStoreZone(garageId, garage))
+    end
+    return true
+end

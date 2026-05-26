@@ -29,7 +29,7 @@ function ClientPublicGarage.Store(garageId)
 
     if not vehicle or vehicle == 0 then
         ClientUtils.Notify(Locale.no_vehicle_nearby, 'error')
-        return
+        return { success = false, code = "no_vehicle_nearby", message = Locale.no_vehicle_nearby }
     end
 
     local plate = ClientUtils.GetVehiclePlate(vehicle)
@@ -53,9 +53,11 @@ function ClientPublicGarage.Store(garageId)
 
         SetEntityAsMissionEntity(vehicle, true, true)
         DeleteVehicle(vehicle)
-    else
-        ClientUtils.Notify(result and result.message or Locale.access_denied, 'error')
+        return { success = true, data = { approved = true, deleteVehicle = true, garageId = garageId, plate = plate } }
     end
+
+    ClientUtils.Notify(result and result.message or Locale.access_denied, 'error')
+    return result or { success = false, code = 'store_failed', message = Locale.access_denied }
 end
 
 function ClientPublicGarage.InitBlips()
