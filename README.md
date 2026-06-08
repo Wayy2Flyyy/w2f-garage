@@ -6,7 +6,7 @@ Production-oriented FiveM property garage framework for **QBCore**, **Qbox**, an
 
 ## 🎥 Video Preview
 
-[![Watch the preview](preview.mp4)
+[![Watch the preview](asset/preview.mp4)
 
 ## Features
 
