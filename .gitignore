@@ -1,0 +1,10 @@
+node_modules/
+*.log
+.DS_Store
+web/.vite/
+node_modules/
+**/node_modules/
+.cache/
+.vite/
+.DS_Store
+Thumbs.db
