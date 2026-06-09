@@ -1008,44 +1008,110 @@ function Database.GetPendingPublicGarageBill(plate)
     return nil
 end
 
+local function updateMemoryPublicGarageBill(bill, entry, timestamp)
+    bill.amount = entry.amount
+    bill.daily_fee = entry.dailyFee
+    bill.billable_days = entry.billableDays
+    bill.billing_anchor = entry.billingAnchor
+    bill.paid_until = entry.paidUntil
+    bill.provider = entry.provider or bill.provider or 'internal'
+    bill.provider_bill_id = entry.providerBillId
+    bill.updated_at = timestamp or os.time()
+end
+
 function Database.UpsertPublicGarageBill(entry)
+    entry.plate = ServerUtils.NormalizePlate(entry.plate)
+
+    if not entry.plate then
+        return nil, false
+    end
+
     local pending = Database.GetPendingPublicGarageBill(entry.plate)
+
     if pending then
-        MySQL.update.await(
-            ('UPDATE `%s` SET `amount` = ?, `daily_fee` = ?, `billable_days` = ?, `billing_anchor` = ?, `paid_until` = ?, `provider` = ?, `provider_bill_id` = ?, `updated_at` = CURRENT_TIMESTAMP WHERE `id` = ?'):format(publicBillsTable()),
-            { entry.amount, entry.dailyFee, entry.billableDays, entry.billingAnchor, entry.paidUntil, entry.provider, entry.providerBillId, pending.id }
-        )
+        if Database.UsePublicPersistence() then
+            MySQL.update.await(
+                ('UPDATE `%s` SET `amount` = ?, `daily_fee` = ?, `billable_days` = ?, `billing_anchor` = ?, `paid_until` = ?, `provider` = ?, `provider_bill_id` = ?, `updated_at` = CURRENT_TIMESTAMP WHERE `id` = ?'):format(publicBillsTable()),
+                { entry.amount, entry.dailyFee, entry.billableDays, entry.billingAnchor, entry.paidUntil, entry.provider or 'internal', entry.providerBillId, pending.id }
+            )
+        else
+            updateMemoryPublicGarageBill(pending, entry, os.time())
+        end
+
         return pending.id, false
     end
 
     if Database.UsePublicPersistence() then
         return MySQL.insert.await(
-        ('INSERT INTO `%s` (`owner_identifier`,`plate`,`garage_id`,`bill_type`,`amount`,`daily_fee`,`billable_days`,`billing_anchor`,`paid_until`,`status`,`provider`,`provider_bill_id`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'):format(publicBillsTable()),
-        { entry.ownerIdentifier, entry.plate, entry.garageId, entry.billType or 'storage', entry.amount, entry.dailyFee, entry.billableDays, entry.billingAnchor, entry.paidUntil, entry.status or 'pending', entry.provider or 'internal', entry.providerBillId }
-    ), true
+            ('INSERT INTO `%s` (`owner_identifier`,`plate`,`garage_id`,`bill_type`,`amount`,`daily_fee`,`billable_days`,`billing_anchor`,`paid_until`,`status`,`provider`,`provider_bill_id`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'):format(publicBillsTable()),
+            { entry.ownerIdentifier, entry.plate, entry.garageId, entry.billType or 'public_garage_storage', entry.amount, entry.dailyFee, entry.billableDays, entry.billingAnchor, entry.paidUntil, entry.status or 'pending', entry.provider or 'internal', entry.providerBillId }
+        ), true
     end
 
     Database._memoryPublicBillSeq = Database._memoryPublicBillSeq + 1
     local id = Database._memoryPublicBillSeq
-    Database._memoryPublicBills[id] = { id=id, owner_identifier=entry.ownerIdentifier, plate=entry.plate, garage_id=entry.garageId, bill_type=entry.billType or 'public_garage_storage', amount=entry.amount, daily_fee=entry.dailyFee, billable_days=entry.billableDays, billing_anchor=entry.billingAnchor, paid_until=entry.paidUntil, status=entry.status or 'pending', provider=entry.provider or 'internal', provider_bill_id=entry.providerBillId }
+    local now = os.time()
+
+    Database._memoryPublicBills[id] = {
+        id = id,
+        owner_identifier = entry.ownerIdentifier,
+        plate = entry.plate,
+        garage_id = entry.garageId,
+        bill_type = entry.billType or 'public_garage_storage',
+        amount = entry.amount,
+        daily_fee = entry.dailyFee,
+        billable_days = entry.billableDays,
+        billing_anchor = entry.billingAnchor,
+        paid_until = entry.paidUntil,
+        status = entry.status or 'pending',
+        provider = entry.provider or 'internal',
+        provider_bill_id = entry.providerBillId,
+        created_at = now,
+        updated_at = now
+    }
+
     return id, true
 end
 
 function Database.MarkPublicGarageBillPaid(billId)
-    return (MySQL.update.await(
-        ('UPDATE `%s` SET `status` = ?, `paid_at` = CURRENT_TIMESTAMP, `updated_at` = CURRENT_TIMESTAMP WHERE `id` = ?'):format(publicBillsTable()),
-        { 'paid', billId }
-    ) or 0) > 0
-    local b = Database._memoryPublicBills[billId]
-    if b then b.status='paid'; b.paid_at=os.time(); return true end
-    return false
+    if Database.UsePublicPersistence() then
+        return (MySQL.update.await(
+            ('UPDATE `%s` SET `status` = ?, `paid_at` = CURRENT_TIMESTAMP, `updated_at` = CURRENT_TIMESTAMP WHERE `id` = ?'):format(publicBillsTable()),
+            { 'paid', billId }
+        ) or 0) > 0
+    end
+
+    local bill = Database._memoryPublicBills[billId]
+
+    if not bill then
+        return false
+    end
+
+    bill.status = 'paid'
+    bill.paid_at = os.time()
+    bill.updated_at = os.time()
+
+    return true
 end
 
 function Database.UpdatePublicGarageBillStatus(billId, status)
-    return (MySQL.update.await(
-        ('UPDATE `%s` SET `status` = ?, `updated_at` = CURRENT_TIMESTAMP WHERE `id` = ?'):format(publicBillsTable()),
-        { status, billId }
-    ) or 0) > 0
+    if Database.UsePublicPersistence() then
+        return (MySQL.update.await(
+            ('UPDATE `%s` SET `status` = ?, `updated_at` = CURRENT_TIMESTAMP WHERE `id` = ?'):format(publicBillsTable()),
+            { status, billId }
+        ) or 0) > 0
+    end
+
+    local bill = Database._memoryPublicBills[billId]
+
+    if not bill then
+        return false
+    end
+
+    bill.status = status
+    bill.updated_at = os.time()
+
+    return true
 end
 
 
@@ -1069,9 +1135,6 @@ function Database.GetPublicCurrentBill(plate)
         return MySQL.single.await(('SELECT * FROM `%s` WHERE `id` = ? LIMIT 1'):format(publicBillsTable()), { row.current_bill_id })
     end
     return Database._memoryPublicBills[row.current_bill_id]
-    local b = Database._memoryPublicBills[billId]
-    if b then b.status=status; return true end
-    return false
 end
 
 function Database.DeletePublicVehicle(plate)

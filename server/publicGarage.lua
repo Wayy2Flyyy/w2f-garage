@@ -52,7 +52,7 @@ function PublicGarage.EnsureBill(source, record, garageId)
         ownerIdentifier = record.owner_identifier,
         plate = plate,
         garageId = garageId or record.garage_id,
-        billType = 'storage',
+        billType = 'public_garage_storage',
         amount = fee,
         dailyFee = dailyFee,
         billableDays = days,
