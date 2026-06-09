@@ -10,7 +10,7 @@
 ![Qbox](https://img.shields.io/badge/Qbox-supported-2ea44f?style=for-the-badge)
 ![ESX](https://img.shields.io/badge/ESX-supported-2ea44f?style=for-the-badge)
 
-![Status](https://img.shields.io/badge/release-preview-orange?style=flat-square)
+![Status](https://img.shields.io/badge/release-beta-orange?style=flat-square)
 ![Lua](https://img.shields.io/badge/Lua-5.4-000080?style=flat-square&logo=lua&logoColor=white)
 ![oxmysql](https://img.shields.io/badge/oxmysql-required-blue?style=flat-square)
 ![ox__lib](https://img.shields.io/badge/ox__lib-required-blue?style=flat-square)
