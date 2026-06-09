@@ -36,18 +36,4 @@ Production-oriented FiveM property garage framework for **QBCore**, **Qbox**, an
 3. Add `ensure w2f-garage` after ox_lib, oxmysql, and your framework.
 4. Build UI: `cd web && npm install && npm run build`.
 
-## Documentation
-
-- [INSTALL.md](INSTALL.md)
-- [docs/CONFIG_GUIDE.md](docs/CONFIG_GUIDE.md)
-- [docs/PROPERTY_GARAGES.md](docs/PROPERTY_GARAGES.md)
-- [docs/INTERIORS.md](docs/INTERIORS.md)
-- [docs/FRAMEWORK_BRIDGE.md](docs/FRAMEWORK_BRIDGE.md)
-- [docs/DATABASE.md](docs/DATABASE.md)
-- [docs/EVENTS.md](docs/EVENTS.md)
-- [docs/EXPORTS.md](docs/EXPORTS.md)
-- [docs/MIGRATION.md](docs/MIGRATION.md)
-
-## TODO_CAPTURE
-
-Property garages ship with exact **exterior entry** coords and tier **interior base** coords (shared shells). Store, spawn, per-garage interior offsets, and vehicle slot vec4s use `TODO_CAPTURE` until mapped. Players can enter the shared interior at the base while capture is in progress. See [docs/PROPERTY_GARAGES.md](docs/PROPERTY_GARAGES.md).
+*Stay2Flyyy*
