@@ -267,17 +267,20 @@ function Database.CreateImpoundRecord(entry)
     end
 
     local query = ('INSERT INTO `%s` (`plate`, `owner_identifier`, `garage_id`, `fee`, `reason`, `status`, `impounded_by`) VALUES (?, ?, ?, ?, ?, ?, ?)'):format(Config.Database.W2FTables.impounds)
-    if Database.UsePublicPersistence() then
+if Database.UsePublicPersistence() then
         return MySQL.insert.await(query, {
-        entry.plate,
-        entry.ownerIdentifier,
-        entry.garageId,
-        entry.fee or 0,
-        entry.reason,
-        entry.status or 'active',
-        entry.impoundedBy
-    }) ~= nil
-end
+            entry.plate,
+            entry.ownerIdentifier,
+            entry.garageId,
+            entry.fee or 0,
+            entry.reason,
+            entry.status or 'active',
+            entry.impoundedBy
+        }) ~= nil
+    end
+
+    return false   -- non-public-persistence fallback
+end                -- ← the missing end that fixes the parse error
 
 function Database.UpdateImpoundStatus(plate, status)
     if safeMode() or not enabled() or not hasOxMySQL() then
